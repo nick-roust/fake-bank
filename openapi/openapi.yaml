@@ -1,0 +1,318 @@
+openapi: 3.1.0
+info:
+  title: Fake-bank API
+  summary: Payment provider simulator API.
+  description: >
+    Fake-bank exposes a deterministic payment provider simulator for local
+    development and integration testing.
+  version: 0.1.0
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+security: []
+tags:
+  - name: Payments
+    description: Payment creation, retrieval, and confirmation.
+  - name: Webhooks
+    description: Webhook testing and delivery simulation.
+paths:
+  /v1/payments:
+    post:
+      tags:
+        - Payments
+      summary: Create a payment
+      operationId: createPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+      responses:
+        "201":
+          description: Payment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /v1/payments/{payment_id}:
+    get:
+      tags:
+        - Payments
+      summary: Get a payment
+      operationId: getPayment
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+      responses:
+        "200":
+          description: Payment found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/payments/{payment_id}/confirm:
+    post:
+      tags:
+        - Payments
+      summary: Confirm a payment
+      operationId: confirmPayment
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentConfirmationRequest"
+      responses:
+        "200":
+          description: Payment confirmation result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /v1/webhooks/test:
+    post:
+      tags:
+        - Webhooks
+      summary: Send a test webhook
+      operationId: sendTestWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestWebhookRequest"
+      responses:
+        "202":
+          description: Test webhook accepted for delivery.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestWebhookResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+components:
+  parameters:
+    PaymentId:
+      name: payment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^pay_[A-Za-z0-9]+$"
+      description: Payment identifier.
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    PaymentStatus:
+      type: string
+      enum:
+        - created
+        - pending
+        - succeeded
+        - failed
+    PaymentMethod:
+      type: string
+      enum:
+        - card
+    Scenario:
+      type: string
+      enum:
+        - card_success
+        - card_declined
+        - delayed_success
+        - timeout
+        - duplicate_webhook
+        - provider_error
+    PaymentRequest:
+      type: object
+      required:
+        - merchant_id
+        - amount
+        - currency
+        - payment_method
+        - return_url
+        - webhook_url
+      properties:
+        merchant_id:
+          type: string
+          example: demo-shop
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          example: 199.99
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: EUR
+        payment_method:
+          $ref: "#/components/schemas/PaymentMethod"
+        return_url:
+          type: string
+          format: uri
+          example: https://merchant.test/success
+        webhook_url:
+          type: string
+          format: uri
+          example: https://merchant.test/webhook
+        scenario:
+          $ref: "#/components/schemas/Scenario"
+    PaymentResponse:
+      type: object
+      required:
+        - payment_id
+        - status
+        - checkout_url
+      properties:
+        payment_id:
+          type: string
+          example: pay_000001
+        status:
+          $ref: "#/components/schemas/PaymentStatus"
+        checkout_url:
+          type: string
+          format: uri
+          example: http://localhost:8080/checkout/pay_000001
+    Payment:
+      type: object
+      required:
+        - payment_id
+        - merchant_id
+        - amount
+        - currency
+        - payment_method
+        - status
+        - checkout_url
+        - return_url
+        - webhook_url
+        - created_at
+        - updated_at
+      properties:
+        payment_id:
+          type: string
+          example: pay_000001
+        merchant_id:
+          type: string
+          example: demo-shop
+        amount:
+          type: number
+          format: double
+          example: 199.99
+        currency:
+          type: string
+          example: EUR
+        payment_method:
+          $ref: "#/components/schemas/PaymentMethod"
+        status:
+          $ref: "#/components/schemas/PaymentStatus"
+        checkout_url:
+          type: string
+          format: uri
+        return_url:
+          type: string
+          format: uri
+        webhook_url:
+          type: string
+          format: uri
+        scenario:
+          $ref: "#/components/schemas/Scenario"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PaymentConfirmationRequest:
+      type: object
+      required:
+        - card_number
+        - expiry
+        - cvv
+      properties:
+        card_number:
+          type: string
+          example: "4242424242424242"
+        expiry:
+          type: string
+          example: "12/30"
+        cvv:
+          type: string
+          example: "123"
+    TestWebhookRequest:
+      type: object
+      required:
+        - webhook_url
+        - event
+        - payment_id
+      properties:
+        webhook_url:
+          type: string
+          format: uri
+        event:
+          type: string
+          example: payment.succeeded
+        payment_id:
+          type: string
+          example: pay_000001
+    TestWebhookResponse:
+      type: object
+      required:
+        - accepted
+      properties:
+        accepted:
+          type: boolean
+          example: true
+    Error:
+      type: object
+      required:
+        - error_code
+        - message
+        - request_id
+      properties:
+        error_code:
+          type: string
+          example: invalid_request
+        message:
+          type: string
+          example: Request validation failed.
+        request_id:
+          type: string
+          example: req_000001
+        details:
+          type: object
+          additionalProperties: true

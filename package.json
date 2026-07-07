@@ -1,0 +1,22 @@
+{
+  "name": "fake-bank",
+  "version": "0.1.0",
+  "description": "Open-source payment provider simulator with API, hosted checkout and webhook scenarios.",
+  "license": "Apache-2.0",
+  "private": false,
+  "type": "module",
+  "packageManager": "pnpm@11.0.9",
+  "scripts": {
+    "dev": "echo \"Development workspace is not initialized yet.\"",
+    "test": "echo \"Tests are not initialized yet.\"",
+    "lint:openapi": "pnpm --package=@redocly/cli dlx redocly lint openapi/openapi.yaml"
+  },
+  "keywords": [
+    "payments",
+    "payment-provider",
+    "simulator",
+    "checkout",
+    "webhooks",
+    "openapi"
+  ]
+}
