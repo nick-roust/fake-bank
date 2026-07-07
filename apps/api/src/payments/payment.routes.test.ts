@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createApiApp } from '../server/app.js';
 import type { ApiConfig } from '../server/config.js';
+import { createWebhookDeliveryService } from '../webhooks/webhook.delivery.js';
+import { createMemoryWebhookDeliveryRepository } from '../webhooks/webhook.repository.memory.js';
 import { createPaymentLifecycleService } from './payment.lifecycle.js';
 import { createMemoryPaymentRepository } from './payment.repository.memory.js';
 
@@ -164,6 +166,63 @@ test('confirms a successful payment through created to pending to succeeded', ()
   });
 });
 
+test('delivers payment succeeded webhook after successful confirmation', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const deliveredPayloads: unknown[] = [];
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks: createWebhookDeliveryService(webhookAttempts, (_url, payload) => {
+      deliveredPayloads.push(payload);
+      return Promise.resolve({ status: 204, body: '' });
+    }),
+  });
+
+  return app.inject({
+    method: 'POST',
+    url: '/v1/payments',
+    payload: {
+      merchant_id: 'demo-shop',
+      merchant_reference: 'order_10001',
+      amount: 199.99,
+      currency: 'EUR',
+      payment_method: 'card',
+      return_url: 'https://merchant.example/checkout/return',
+      webhook_url: 'https://merchant.example/webhooks/payments',
+    },
+  }).then((createdResponse) => {
+    const created = createdResponse.json();
+
+    return app.inject({
+      method: 'POST',
+      url: `/v1/payments/${created.payment_id}/confirm`,
+      payload: {
+        payment_method: 'card',
+        card: {
+          number: '4242424242424242',
+          expiry: '12/30',
+          cvv: '123',
+        },
+      },
+    }).then((response) => {
+      assert.equal(response.statusCode, 200);
+      assert.equal(response.json().status, 'succeeded');
+      assert.equal(deliveredPayloads.length, 1);
+
+      return webhookAttempts.listDeliveryAttempts(created.payment_id).then((attempts) => {
+        assert.equal(attempts.length, 1);
+        assert.equal(attempts[0]?.event_name, 'payment.succeeded');
+        assert.equal(attempts[0]?.status, 'delivered');
+        assert.equal(attempts[0]?.response_status_code, 204);
+        assert.equal(attempts[0]?.payload.event, 'payment.succeeded');
+        assert.equal(attempts[0]?.payload.payment_id, created.payment_id);
+        return app.close();
+      });
+    });
+  });
+});
+
 test('confirms a declined payment through created to pending to failed', () => {
   const payments = createMemoryPaymentRepository();
   const app = createApiApp({ config, payments });
@@ -204,6 +263,111 @@ test('confirms a declined payment through created to pending to failed', () => {
           'payment_confirmed',
           'test_card_declined',
         ]);
+        return app.close();
+      });
+    });
+  });
+});
+
+test('delivers payment failed webhook after declined confirmation', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks: createWebhookDeliveryService(webhookAttempts, () => {
+      return Promise.resolve({ status: 200, body: 'ok' });
+    }),
+  });
+
+  return app.inject({
+    method: 'POST',
+    url: '/v1/payments',
+    payload: {
+      merchant_id: 'demo-shop',
+      amount: 199.99,
+      currency: 'EUR',
+      payment_method: 'card',
+      return_url: 'https://merchant.example/checkout/return',
+      webhook_url: 'https://merchant.example/webhooks/payments',
+    },
+  }).then((createdResponse) => {
+    const created = createdResponse.json();
+
+    return app.inject({
+      method: 'POST',
+      url: `/v1/payments/${created.payment_id}/confirm`,
+      payload: {
+        payment_method: 'card',
+        card: {
+          number: '4000000000000002',
+          expiry: '12/30',
+          cvv: '123',
+        },
+      },
+    }).then((response) => {
+      assert.equal(response.statusCode, 200);
+      assert.equal(response.json().status, 'failed');
+
+      return webhookAttempts.listDeliveryAttempts(created.payment_id).then((attempts) => {
+        assert.equal(attempts.length, 1);
+        assert.equal(attempts[0]?.event_name, 'payment.failed');
+        assert.equal(attempts[0]?.status, 'delivered');
+        assert.equal(attempts[0]?.payload.event, 'payment.failed');
+        return app.close();
+      });
+    });
+  });
+});
+
+test('records failed webhook delivery without changing payment state', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks: createWebhookDeliveryService(webhookAttempts, () => {
+      return Promise.reject(new Error('Connection refused'));
+    }),
+  });
+
+  return app.inject({
+    method: 'POST',
+    url: '/v1/payments',
+    payload: {
+      merchant_id: 'demo-shop',
+      amount: 199.99,
+      currency: 'EUR',
+      payment_method: 'card',
+      return_url: 'https://merchant.example/checkout/return',
+      webhook_url: 'https://merchant.example/webhooks/payments',
+    },
+  }).then((createdResponse) => {
+    const created = createdResponse.json();
+
+    return app.inject({
+      method: 'POST',
+      url: `/v1/payments/${created.payment_id}/confirm`,
+      payload: {
+        payment_method: 'card',
+        card: {
+          number: '4242424242424242',
+          expiry: '12/30',
+          cvv: '123',
+        },
+      },
+    }).then((response) => {
+      assert.equal(response.statusCode, 200);
+      assert.equal(response.json().status, 'succeeded');
+
+      return Promise.all([
+        payments.findPaymentById(created.payment_id),
+        webhookAttempts.listDeliveryAttempts(created.payment_id),
+      ]).then(([payment, attempts]) => {
+        assert.equal(payment?.status, 'succeeded');
+        assert.equal(attempts.length, 1);
+        assert.equal(attempts[0]?.status, 'failed');
+        assert.equal(attempts[0]?.response_summary, 'Connection refused');
         return app.close();
       });
     });
@@ -309,14 +473,14 @@ test('rejects invalid lifecycle transitions', () => {
       () => lifecycle.transitionPayment(createdPayment, 'succeeded', 'invalid_direct_success'),
       /Invalid payment transition/,
     ).then(() => lifecycle.transitionPayment(createdPayment, 'pending', 'valid_pending'));
-  }).then((pendingPayment) => {
+  }).then((pendingTransition) => {
     return assert.rejects(
-      () => lifecycle.transitionPayment(pendingPayment, 'created', 'invalid_reopen'),
+      () => lifecycle.transitionPayment(pendingTransition.payment, 'created', 'invalid_reopen'),
       /Invalid payment transition/,
-    ).then(() => lifecycle.transitionPayment(pendingPayment, 'succeeded', 'valid_success'));
-  }).then((succeededPayment) => {
+    ).then(() => lifecycle.transitionPayment(pendingTransition.payment, 'succeeded', 'valid_success'));
+  }).then((succeededTransition) => {
     return assert.rejects(
-      () => lifecycle.transitionPayment(succeededPayment, 'failed', 'invalid_terminal_change'),
+      () => lifecycle.transitionPayment(succeededTransition.payment, 'failed', 'invalid_terminal_change'),
       /Invalid payment transition/,
     );
   });

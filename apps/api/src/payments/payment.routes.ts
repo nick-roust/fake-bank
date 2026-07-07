@@ -25,7 +25,11 @@ export function registerPaymentRoutes(
   app: FastifyInstance,
   dependencies: ApiAppDependencies,
 ): void {
-  const service = createPaymentService(dependencies.payments, dependencies.config);
+  const service = createPaymentService(
+    dependencies.payments,
+    dependencies.config,
+    dependencies.webhooks,
+  );
 
   app.post<{ Body: CreatePaymentInput }>('/v1/payments', {
     schema: {

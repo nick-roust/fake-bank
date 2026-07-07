@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { ApiConfig } from '../server/config.js';
+import type { WebhookDeliveryService } from '../webhooks/webhook.delivery.js';
 import { InvalidTestCardError, resolveTestCard } from './card-simulation.js';
 import {
   createPaymentLifecycleService,
@@ -30,6 +31,7 @@ export type PaymentService = {
 export function createPaymentService(
   repository: PaymentRepository,
   config: Pick<ApiConfig, 'checkoutBaseUrl'>,
+  webhooks?: WebhookDeliveryService,
 ): PaymentService {
   const lifecycle = createPaymentLifecycleService(repository);
 
@@ -67,7 +69,17 @@ export function createPaymentService(
           return ensurePending(payment).then((pendingPayment) => {
             const terminalStatus = result === 'success' ? 'succeeded' : 'failed';
             const reason = result === 'success' ? 'test_card_success' : 'test_card_declined';
-            return lifecycle.transitionPayment(pendingPayment, terminalStatus, reason);
+            return lifecycle
+              .transitionPayment(pendingPayment, terminalStatus, reason)
+              .then((transition) => {
+                if (!webhooks) {
+                  return transition.payment;
+                }
+
+                return webhooks
+                  .deliverPaymentLifecycleEvent(transition.payment, transition.lifecycleEvent)
+                  .then(() => transition.payment);
+              });
           });
         });
     },
@@ -78,7 +90,9 @@ export function createPaymentService(
       return Promise.resolve(payment);
     }
 
-    return lifecycle.transitionPayment(payment, 'pending', 'payment_confirmed');
+    return lifecycle
+      .transitionPayment(payment, 'pending', 'payment_confirmed')
+      .then((transition) => transition.payment);
   }
 }
 

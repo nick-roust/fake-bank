@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { PaymentRepository } from './payment.repository.js';
+import type { PaymentRepository, PaymentTransitionResult } from './payment.repository.js';
 import type { Payment, PaymentStatus } from './payment.types.js';
 
 export class InvalidPaymentTransitionError extends Error {
@@ -17,7 +17,7 @@ export type PaymentLifecycleService = {
     payment: Payment,
     nextStatus: PaymentStatus,
     reason: string,
-  ): Promise<Payment>;
+  ): Promise<PaymentTransitionResult>;
 };
 
 const allowedTransitions: Record<PaymentStatus, readonly PaymentStatus[]> = {
@@ -35,7 +35,7 @@ export function createPaymentLifecycleService(
       payment: Payment,
       nextStatus: PaymentStatus,
       reason: string,
-    ): Promise<Payment> {
+    ): Promise<PaymentTransitionResult> {
       if (!canTransition(payment.status, nextStatus)) {
         return Promise.reject(
           new InvalidPaymentTransitionError(payment.payment_id, payment.status, nextStatus),

@@ -5,6 +5,7 @@ import type {
   PaymentLifecycleEvent,
   PaymentRepository,
   PaymentTransitionInput,
+  PaymentTransitionResult,
 } from './payment.repository.js';
 import type { Payment, PaymentScenario, PaymentStatus } from './payment.types.js';
 
@@ -32,6 +33,14 @@ type LifecycleEventRow = QueryResultRow & {
   next_status: PaymentStatus;
   reason: string;
   created_at: Date;
+};
+
+type PaymentTransitionRow = PaymentRow & {
+  lifecycle_event_id: string;
+  previous_status: PaymentStatus | null;
+  next_status: PaymentStatus;
+  reason: string;
+  lifecycle_created_at: Date;
 };
 
 export function createPostgresPaymentRepository(pool: DbPool): PaymentRepository {
@@ -81,9 +90,9 @@ export function createPostgresPaymentRepository(pool: DbPool): PaymentRepository
         .then((result) => (result.rows[0] ? toPayment(result.rows[0]) : null));
     },
 
-    transitionPayment(input: PaymentTransitionInput): Promise<Payment | null> {
+    transitionPayment(input: PaymentTransitionInput): Promise<PaymentTransitionResult | null> {
       return pool
-        .query<PaymentRow>(
+        .query<PaymentTransitionRow>(
           `
             WITH updated_payment AS (
               UPDATE payments
@@ -101,9 +110,16 @@ export function createPostgresPaymentRepository(pool: DbPool): PaymentRepository
               )
               SELECT $5, payment_id, $2, $3, $4
               FROM updated_payment
+              RETURNING
+                lifecycle_event_id,
+                previous_status,
+                next_status,
+                reason,
+                created_at AS lifecycle_created_at
             )
-            SELECT *
+            SELECT updated_payment.*, lifecycle_event.*
             FROM updated_payment
+            JOIN lifecycle_event ON lifecycle_event.payment_id = updated_payment.payment_id
           `,
           [
             input.payment_id,
@@ -113,7 +129,7 @@ export function createPostgresPaymentRepository(pool: DbPool): PaymentRepository
             input.lifecycle_event_id,
           ],
         )
-        .then((result) => (result.rows[0] ? toPayment(result.rows[0]) : null));
+        .then((result) => (result.rows[0] ? toPaymentTransitionResult(result.rows[0]) : null));
     },
 
     listLifecycleEvents(paymentId: string): Promise<PaymentLifecycleEvent[]> {
@@ -129,6 +145,20 @@ export function createPostgresPaymentRepository(pool: DbPool): PaymentRepository
         )
         .then((result) => result.rows.map(toLifecycleEvent));
     },
+  };
+}
+
+function toPaymentTransitionResult(row: PaymentTransitionRow): PaymentTransitionResult {
+  return {
+    payment: toPayment(row),
+    lifecycleEvent: toLifecycleEvent({
+      lifecycle_event_id: row.lifecycle_event_id,
+      payment_id: row.payment_id,
+      previous_status: row.previous_status,
+      next_status: row.next_status,
+      reason: row.reason,
+      created_at: row.lifecycle_created_at,
+    }),
   };
 }
 

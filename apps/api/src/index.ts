@@ -2,11 +2,14 @@ import { createPostgresPaymentRepository } from './payments/payment.repository.p
 import { createApiApp } from './server/app.js';
 import { loadConfig } from './server/config.js';
 import { createPgPool } from './server/db.js';
+import { createWebhookDeliveryService } from './webhooks/webhook.delivery.js';
+import { createPostgresWebhookDeliveryRepository } from './webhooks/webhook.repository.postgres.js';
 
 const config = loadConfig();
 const pool = createPgPool(config.databaseUrl);
 const payments = createPostgresPaymentRepository(pool);
-const app = createApiApp({ config, payments });
+const webhooks = createWebhookDeliveryService(createPostgresWebhookDeliveryRepository(pool));
+const app = createApiApp({ config, payments, webhooks });
 
 app.listen({ host: config.host, port: config.port })
   .then((address) => {

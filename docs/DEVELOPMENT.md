@@ -141,10 +141,12 @@ pnpm dev:services:down
 
 Database migrations live in `db/migrations`.
 
-Apply the current schema manually during this foundation phase:
+Apply migrations in order during local development:
 
 ```sh
-psql "$DATABASE_URL" -f db/migrations/0001_payment_persistence.sql
+for migration in db/migrations/*.sql; do
+  psql "$DATABASE_URL" -f "$migration"
+done
 ```
 
 Automated migration execution will be added in a later implementation phase.

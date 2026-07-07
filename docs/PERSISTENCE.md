@@ -130,6 +130,12 @@ Indexes:
 - `webhook_delivery_attempts_payment_id_created_at_idx`
 - `webhook_delivery_attempts_status_created_at_idx`
 
+Delivery status values:
+
+- `pending`
+- `delivered`
+- `failed`
+
 ## Relationships
 
 ```text

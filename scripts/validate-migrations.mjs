@@ -8,6 +8,7 @@ const requiredObjects = [
   'CREATE TABLE payment_lifecycle_events',
   'CREATE TABLE scenario_execution_state',
   'CREATE TABLE webhook_delivery_attempts',
+  'CREATE TYPE webhook_delivery_status AS ENUM',
   'CREATE INDEX payments_status_idx',
   'CREATE INDEX payment_lifecycle_events_payment_id_created_at_idx',
   'CREATE INDEX scenario_execution_state_scheduled_at_idx',
@@ -76,6 +77,14 @@ for (const requiredObject of requiredObjects) {
   if (!initialMigration.includes(requiredObject)) {
     throw new Error(`Initial migration is missing required object: ${requiredObject}`);
   }
+}
+
+const allMigrations = files
+  .map((file) => readFileSync(join(migrationsDir.pathname, file), 'utf8'))
+  .join('\n');
+
+if (!allMigrations.includes("RENAME VALUE 'sent' TO 'delivered'")) {
+  throw new Error('Migrations must normalize webhook delivery status to delivered.');
 }
 
 console.log(`Validated ${files.length} migration file(s).`);

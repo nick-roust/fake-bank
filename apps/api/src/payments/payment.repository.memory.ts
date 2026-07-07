@@ -3,6 +3,7 @@ import type {
   PaymentLifecycleEvent,
   PaymentRepository,
   PaymentTransitionInput,
+  PaymentTransitionResult,
 } from './payment.repository.js';
 import type { Payment } from './payment.types.js';
 
@@ -28,7 +29,7 @@ export function createMemoryPaymentRepository(): PaymentRepository {
       return Promise.resolve(payments.get(paymentId) ?? null);
     },
 
-    transitionPayment(input: PaymentTransitionInput): Promise<Payment | null> {
+    transitionPayment(input: PaymentTransitionInput): Promise<PaymentTransitionResult | null> {
       const payment = payments.get(input.payment_id);
 
       if (!payment || payment.status !== input.previous_status) {
@@ -53,7 +54,10 @@ export function createMemoryPaymentRepository(): PaymentRepository {
 
       payments.set(input.payment_id, updated);
       events.set(input.payment_id, [...paymentEvents, lifecycleEvent]);
-      return Promise.resolve(updated);
+      return Promise.resolve({
+        payment: updated,
+        lifecycleEvent,
+      });
     },
 
     listLifecycleEvents(paymentId: string): Promise<PaymentLifecycleEvent[]> {

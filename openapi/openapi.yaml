@@ -224,6 +224,8 @@ paths:
                       event: payment.succeeded
                       event_id: event_000001
                       payment_id: pay_000001
+                      merchant_id: demo-shop
+                      merchant_reference: order_10001
                       amount: 199.99
                       currency: EUR
                       created_at: "2026-07-07T12:01:00Z"
@@ -520,6 +522,12 @@ components:
           $ref: "#/components/schemas/EventId"
         payment_id:
           $ref: "#/components/schemas/PaymentId"
+        merchant_id:
+          type: string
+          example: demo-shop
+        merchant_reference:
+          type: string
+          example: order_10001
         amount:
           $ref: "#/components/schemas/Amount"
         currency:

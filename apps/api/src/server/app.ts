@@ -2,12 +2,17 @@ import { randomUUID } from 'node:crypto';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { PaymentRepository } from '../payments/payment.repository.js';
 import { registerPaymentRoutes } from '../payments/payment.routes.js';
+import {
+  createNoopWebhookDeliveryService,
+  type WebhookDeliveryService,
+} from '../webhooks/webhook.delivery.js';
 import type { ApiConfig } from './config.js';
 import { sendError } from './errors.js';
 
 export type ApiAppDependencies = {
   config: ApiConfig;
   payments: PaymentRepository;
+  webhooks?: WebhookDeliveryService;
 };
 
 export function createApiApp(dependencies: ApiAppDependencies): FastifyInstance {
@@ -48,7 +53,10 @@ export function createApiApp(dependencies: ApiAppDependencies): FastifyInstance 
     },
   }, (_request, reply) => reply.send({ status: 'ok' }));
 
-  registerPaymentRoutes(app, dependencies);
+  registerPaymentRoutes(app, {
+    ...dependencies,
+    webhooks: dependencies.webhooks ?? createNoopWebhookDeliveryService(),
+  });
 
   return app;
 }

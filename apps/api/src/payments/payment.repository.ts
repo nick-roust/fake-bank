@@ -23,9 +23,14 @@ export type PaymentTransitionInput = {
   lifecycle_event_id: string;
 };
 
+export type PaymentTransitionResult = {
+  payment: Payment;
+  lifecycleEvent: PaymentLifecycleEvent;
+};
+
 export type PaymentRepository = {
   createPayment(input: CreatePaymentRecordInput): Promise<Payment>;
   findPaymentById(paymentId: string): Promise<Payment | null>;
-  transitionPayment(input: PaymentTransitionInput): Promise<Payment | null>;
+  transitionPayment(input: PaymentTransitionInput): Promise<PaymentTransitionResult | null>;
   listLifecycleEvents(paymentId: string): Promise<PaymentLifecycleEvent[]>;
 };
