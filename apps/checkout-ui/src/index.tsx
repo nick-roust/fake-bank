@@ -142,7 +142,7 @@ function App() {
               </div>
             </dl>
 
-            <PaymentState status={payment.status} isSubmitting={isSubmitting} />
+            <PaymentState payment={payment} amountText={amountText} isSubmitting={isSubmitting} />
 
             {payment.status === 'created' || payment.status === 'pending' ? (
               <form className="card-form" onSubmit={submitPayment}>
@@ -153,7 +153,7 @@ function App() {
                     autoComplete="off"
                     value={card.number}
                     onChange={(event) => setCard({ ...card, number: normalizeDigits(event.target.value) })}
-                    placeholder="4242424242424242"
+                    placeholder="Card number"
                     maxLength={19}
                   />
                 </label>
@@ -166,7 +166,7 @@ function App() {
                       autoComplete="off"
                       value={card.expiry}
                       onChange={(event) => setCard({ ...card, expiry: event.target.value })}
-                      placeholder="12/30"
+                      placeholder="MM / YY"
                       maxLength={5}
                     />
                   </label>
@@ -178,7 +178,7 @@ function App() {
                       autoComplete="off"
                       value={card.cvv}
                       onChange={(event) => setCard({ ...card, cvv: normalizeDigits(event.target.value) })}
-                      placeholder="123"
+                      placeholder="CVC"
                       maxLength={4}
                     />
                   </label>
@@ -198,20 +198,49 @@ function App() {
   );
 }
 
-function PaymentState(props: { status: PaymentStatus; isSubmitting: boolean }) {
-  if (props.isSubmitting || props.status === 'pending') {
+function PaymentState(props: { payment: Payment; amountText: string; isSubmitting: boolean }) {
+  if (props.isSubmitting || props.payment.status === 'pending') {
     return <StatusBlock tone="neutral" title="Payment is processing" />;
   }
 
-  if (props.status === 'succeeded') {
-    return <StatusBlock tone="success" title="Payment completed" />;
+  if (props.payment.status === 'succeeded') {
+    return <SuccessResult payment={props.payment} amountText={props.amountText} />;
   }
 
-  if (props.status === 'failed') {
+  if (props.payment.status === 'failed') {
     return <StatusBlock tone="failed" title="Payment failed" />;
   }
 
   return null;
+}
+
+function SuccessResult(props: { payment: Payment; amountText: string }) {
+  return (
+    <div className="success-result">
+      <StatusBlock
+        tone="success"
+        title="Payment completed"
+        detail="Your payment was confirmed successfully."
+      />
+      <dl className="result-summary" aria-label="Payment confirmation summary">
+        <div>
+          <dt>Payment ID</dt>
+          <dd>{props.payment.payment_id}</dd>
+        </div>
+        <div>
+          <dt>Merchant</dt>
+          <dd>{props.payment.merchant_reference ?? props.payment.merchant_id}</dd>
+        </div>
+        <div>
+          <dt>Amount</dt>
+          <dd>{props.amountText}</dd>
+        </div>
+      </dl>
+      <a className="return-button" href={props.payment.return_url}>
+        Return to merchant
+      </a>
+    </div>
+  );
 }
 
 function StatusBlock(props: { tone: 'neutral' | 'success' | 'failed'; title: string; detail?: string }) {
