@@ -7,9 +7,10 @@
   "type": "module",
   "packageManager": "pnpm@11.0.9",
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "dev:services": "docker compose --env-file .env -f docker/docker-compose.yml up -d",
-    "dev:services:down": "docker compose --env-file .env -f docker/docker-compose.yml down",
+    "dev": "pnpm db:migrate && pnpm -r --parallel --if-present dev",
+    "dev:services": "docker compose --env-file .env.example -f docker/docker-compose.yml up -d",
+    "dev:services:down": "docker compose --env-file .env.example -f docker/docker-compose.yml down",
+    "db:migrate": "pnpm --filter @fake-bank/api db:migrate",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "build:checkout": "pnpm --filter @fake-bank/checkout-ui build",

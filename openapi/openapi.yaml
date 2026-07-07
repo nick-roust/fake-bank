@@ -20,7 +20,38 @@ tags:
   - name: Payments
     description: Create payments, retrieve payment state, and confirm checkout.
   - name: Webhooks
-    description: Validate webhook integrations with deterministic test events.
+    description: Payment lifecycle callback contracts.
+webhooks:
+  paymentEvent:
+    post:
+      tags:
+        - Webhooks
+      summary: Receive a payment lifecycle webhook
+      description: >
+        Webhook payload delivered by Fake-bank to the merchant webhook URL
+        configured when the payment is created.
+      operationId: receivePaymentWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookPayload"
+            examples:
+              paymentSucceeded:
+                summary: Payment succeeded event
+                value:
+                  event: payment.succeeded
+                  event_id: event_000001
+                  payment_id: pay_000001
+                  merchant_id: demo-shop
+                  merchant_reference: order_10001
+                  amount: 199.99
+                  currency: EUR
+                  created_at: "2026-07-07T12:01:00Z"
+      responses:
+        "200":
+          description: Webhook accepted by the merchant endpoint.
 paths:
   /health:
     get:
@@ -46,7 +77,7 @@ paths:
       description: >
         Creates a payment and returns a hosted checkout URL that can be opened
         by a buyer. The payment starts in the created state and can be advanced
-        by later payment processing behavior.
+        by hosted checkout confirmation and selected scenario behavior.
       operationId: createPayment
       requestBody:
         required: true
@@ -182,55 +213,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "500":
-          $ref: "#/components/responses/InternalError"
-  /v1/webhooks/test:
-    post:
-      tags:
-        - Webhooks
-      summary: Send a test webhook
-      description: >
-        Accepts a webhook test request and returns the event payload that should
-        be delivered to the merchant webhook URL.
-      operationId: sendTestWebhook
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TestWebhookRequest"
-            examples:
-              paymentSucceeded:
-                summary: Payment succeeded test event
-                value:
-                  webhook_url: https://merchant.example/webhooks/payments
-                  event: payment.succeeded
-                  payment_id: pay_000001
-                  amount: 199.99
-                  currency: EUR
-      responses:
-        "202":
-          description: Test webhook accepted.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TestWebhookResponse"
-              examples:
-                accepted:
-                  value:
-                    accepted: true
-                    event_id: event_000001
-                    payload:
-                      event: payment.succeeded
-                      event_id: event_000001
-                      payment_id: pay_000001
-                      merchant_id: demo-shop
-                      merchant_reference: order_10001
-                      amount: 199.99
-                      currency: EUR
-                      created_at: "2026-07-07T12:01:00Z"
-        "400":
-          $ref: "#/components/responses/BadRequest"
         "500":
           $ref: "#/components/responses/InternalError"
 components:
@@ -536,44 +518,6 @@ components:
           type: string
           format: date-time
           example: "2026-07-07T12:01:00Z"
-    TestWebhookRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - webhook_url
-        - event
-        - payment_id
-        - amount
-        - currency
-      properties:
-        webhook_url:
-          type: string
-          format: uri
-          description: URL that receives the test webhook.
-          example: https://merchant.example/webhooks/payments
-        event:
-          $ref: "#/components/schemas/WebhookEventType"
-        payment_id:
-          $ref: "#/components/schemas/PaymentId"
-        amount:
-          $ref: "#/components/schemas/Amount"
-        currency:
-          $ref: "#/components/schemas/Currency"
-    TestWebhookResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - accepted
-        - event_id
-        - payload
-      properties:
-        accepted:
-          type: boolean
-          example: true
-        event_id:
-          $ref: "#/components/schemas/EventId"
-        payload:
-          $ref: "#/components/schemas/WebhookPayload"
     Error:
       type: object
       additionalProperties: false

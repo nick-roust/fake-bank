@@ -14,7 +14,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     env.CHECKOUT_PUBLIC_BASE_URL
     ?? `http://${env.CHECKOUT_UI_HOST ?? 'localhost'}:${parsePort(env.CHECKOUT_UI_PORT ?? '5173')}`;
   const databaseUrl =
-    env.DATABASE_URL ?? 'postgres://fake_bank:fake_bank@localhost:5432/fake_bank';
+    env.DATABASE_URL ?? 'postgres://fake_bank:fake_bank@localhost:55432/fake_bank';
 
   return {
     host,

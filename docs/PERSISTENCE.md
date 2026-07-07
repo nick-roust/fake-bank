@@ -4,7 +4,8 @@
 
 This document defines the Fake-bank v0.1 persistence foundation. It maps the approved domain model to PostgreSQL tables and describes schema ownership, relationships, indexes, timestamps, and migration workflow.
 
-This phase creates persistence structure only. It does not implement API endpoints, checkout behavior, webhook delivery logic, scenario execution logic, repositories, or application queries.
+The persistence layer supports the payment API, hosted checkout confirmation flow,
+scenario execution state, lifecycle event history, and webhook delivery tracking.
 
 ## Schema Ownership
 
@@ -95,7 +96,7 @@ Indexes:
 
 ### scenario_execution_state
 
-Stores future scenario progress for a payment.
+Stores scenario progress for a payment.
 
 Primary key:
 
@@ -115,7 +116,7 @@ Indexes:
 
 ### webhook_delivery_attempts
 
-Stores future webhook delivery tracking records.
+Stores webhook delivery tracking records.
 
 Primary key:
 
@@ -174,13 +175,13 @@ Start PostgreSQL with:
 pnpm dev:services
 ```
 
-Apply the initial schema manually during this foundation phase:
+Apply database migrations:
 
 ```sh
-psql "$DATABASE_URL" -f db/migrations/0001_payment_persistence.sql
+pnpm db:migrate
 ```
 
-Automated migration execution will be introduced in a later implementation phase.
+The migration command tracks applied migration files in `schema_migrations`.
 
 ## Migration Validation
 

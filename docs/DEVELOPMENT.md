@@ -41,19 +41,14 @@ Install dependencies:
 pnpm install
 ```
 
-Create a local environment file:
-
-```sh
-cp .env.example .env
-```
-
 Start local infrastructure services:
 
 ```sh
 pnpm dev:services
 ```
 
-Start workspace development commands:
+Start workspace development commands. This applies database migrations before starting
+the API, checkout UI, and example merchant:
 
 ```sh
 pnpm dev
@@ -65,7 +60,8 @@ Stop local infrastructure services:
 pnpm dev:services:down
 ```
 
-The development workspace is prepared for incremental payment provider simulator implementation.
+Optional local environment overrides can be placed in `.env`. The default local setup uses
+`.env.example` values.
 
 ## Workspace Layout
 
@@ -73,6 +69,9 @@ The development workspace is prepared for incremental payment provider simulator
 apps/
   api/
   checkout-ui/
+
+examples/
+  merchant/
 
 packages/
   shared/
@@ -82,6 +81,8 @@ packages/
 `apps/api` contains the backend application workspace.
 
 `apps/checkout-ui` contains the hosted checkout application workspace.
+
+`examples/merchant` contains the reference merchant integration example.
 
 `packages/shared` contains shared TypeScript contracts and utilities for Fake-bank workspaces.
 
@@ -141,15 +142,29 @@ pnpm dev:services:down
 
 Database migrations live in `db/migrations`.
 
-Apply migrations in order during local development:
+Apply migrations manually when needed:
 
 ```sh
-for migration in db/migrations/*.sql; do
-  psql "$DATABASE_URL" -f "$migration"
-done
+pnpm db:migrate
 ```
 
-Automated migration execution will be added in a later implementation phase.
+The root `pnpm dev` command runs `pnpm db:migrate` before starting development servers.
+
+## Example Merchant
+
+Start the example merchant:
+
+```sh
+pnpm --filter @fake-bank/example-merchant dev
+```
+
+The example merchant listens on `http://127.0.0.1:8090` by default.
+
+Run its smoke test:
+
+```sh
+pnpm --filter @fake-bank/example-merchant test
+```
 
 ## API Contract
 
@@ -163,6 +178,12 @@ Run all workspace development commands:
 
 ```sh
 pnpm dev
+```
+
+Apply database migrations:
+
+```sh
+pnpm db:migrate
 ```
 
 Run all type checks:
@@ -207,7 +228,8 @@ pnpm test
 
 Local environment variables are defined in `.env.example`.
 
-Copy `.env.example` to `.env` before starting local services. The `.env` file is intentionally ignored by Git.
+The default `pnpm dev:services` command uses `.env.example`. Copy `.env.example` to
+`.env` only when local overrides are needed. The `.env` file is intentionally ignored by Git.
 
 PostgreSQL variables:
 
@@ -216,6 +238,7 @@ PostgreSQL variables:
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
+- `DATABASE_URL`
 
 Application variables:
 

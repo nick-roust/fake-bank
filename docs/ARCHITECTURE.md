@@ -65,7 +65,7 @@ Fake-bank is composed of five architectural components. The components describe 
 
 ### API Service
 
-The API service exposes the public payment provider contract. It is responsible for accepting payment creation requests, returning payment state, accepting checkout confirmation requests, and exposing test webhook operations.
+The API service exposes the public payment provider contract. It is responsible for accepting payment creation requests, returning payment state, and accepting checkout confirmation requests.
 
 The API service validates request shape against the public contract and returns stable response models. It should not hide scenario behavior inside ad hoc request handling; scenario decisions belong to the scenario engine.
 
@@ -77,7 +77,7 @@ The checkout UI is part of the provider simulator, not an optional demo shell. I
 
 ### Webhook Engine
 
-The webhook engine delivers payment lifecycle events to merchant webhook URLs. It owns event payload construction, delivery attempts, retry behavior, delivery status, and duplicate delivery scenarios.
+The webhook engine delivers payment lifecycle events to merchant webhook URLs. It owns event payload construction, delivery attempts, delivery status, and duplicate delivery scenarios.
 
 Webhook delivery is asynchronous from the merchant perspective. Merchant systems must be able to receive the same event more than once, receive events after a delay, or receive no event in timeout scenarios.
 
@@ -98,9 +98,8 @@ The scenario engine is the only component that should decide simulated provider 
 
 ### Persistence Layer
 
-The persistence layer stores simulator state. At the architecture level, this includes payments, lifecycle events, scenario execution state, and webhook delivery attempts.
-
-The architecture requires persistence as a concept, but does not choose the storage technology in this phase.
+The persistence layer stores simulator state in PostgreSQL. This includes payments,
+lifecycle events, scenario execution state, and webhook delivery attempts.
 
 ## External Provider Model
 
@@ -166,12 +165,11 @@ Additional scenarios may keep a payment pending, delay a terminal state, return 
 
 The public API contract is defined in `openapi/openapi.yaml`. Architecture decisions must be reflected in that contract before implementation behavior is added.
 
-The initial public contract includes:
+The public API contract includes:
 
 - create payment
 - retrieve payment
 - confirm payment
-- send test webhook
 
 Webhook payloads are also public contracts. They must remain stable, documented, and suitable for merchant-side integration tests.
 

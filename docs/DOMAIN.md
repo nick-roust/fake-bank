@@ -4,7 +4,9 @@
 
 This document defines the minimal payment domain model for Fake-bank v0.1. It describes provider-side payment state, lifecycle semantics, card simulation concepts, and persistence ownership boundaries.
 
-The domain model is the source for later persistence and implementation work. It does not define API handlers, checkout screens, webhook delivery behavior, scenario execution logic, database migrations, or repositories.
+The domain model defines provider-side payment semantics. API handlers, checkout screens,
+webhook delivery behavior, scenario execution logic, migrations, and repositories must
+respect these domain boundaries.
 
 ## Domain Boundary
 
@@ -17,8 +19,8 @@ The domain model includes:
 - checkout references
 - selected simulator scenarios
 - lifecycle history
-- future scenario state
-- future webhook delivery records
+- scenario state
+- webhook delivery records
 
 The domain model does not include merchant-side business state, buyer identity, inventory, fulfillment, accounting, real card processing, or real financial operations.
 
@@ -66,11 +68,11 @@ Merchant-supplied URL that can be used after buyer checkout completes. Fake-bank
 
 `webhook_url`
 
-Merchant-supplied URL used by future webhook delivery behavior. Fake-bank stores it as a provider-side delivery target.
+Merchant-supplied URL used by webhook delivery behavior. Fake-bank stores it as a provider-side delivery target.
 
 `scenario`
 
-Optional selected simulator scenario. The scenario reference is stored on the payment so later scenario execution can produce deterministic outcomes.
+Optional selected simulator scenario. The scenario reference is stored on the payment so scenario execution can produce deterministic outcomes.
 
 `metadata`
 
@@ -149,7 +151,8 @@ The following transitions are invalid:
 
 Lifecycle transitions must be deterministic. Fake-bank must not use random outcomes to move payment state.
 
-Scenario execution will control simulated outcomes in a later phase. This document only defines the lifecycle states and allowed transitions.
+Scenario execution controls simulated outcomes while the lifecycle rules define valid
+state transitions.
 
 ## Card Payment Model
 
@@ -183,11 +186,12 @@ Declined test card. It represents a simulated card decline and can move a pendin
 
 ### Invalid Card Behavior
 
-Any unsupported card number is invalid for v0.1 simulation. Invalid card input must not create a successful or failed provider outcome. It should be rejected as invalid input by later implementation work.
+Any unsupported card number is invalid for v0.1 simulation. Invalid card input must not
+create a successful or failed provider outcome.
 
 ## Persistence Boundary
 
-Persistence stores simulator-owned state required to provide deterministic payment behavior and future delivery tracking.
+Persistence stores simulator-owned state required to provide deterministic payment behavior and delivery tracking.
 
 This phase defines persistence boundaries only. It does not create database migrations, repository interfaces, storage adapters, or query behavior.
 
@@ -227,7 +231,7 @@ Lifecycle history exists to support traceability and deterministic debugging. It
 
 ### Scenario Execution State
 
-Stores future simulator scenario progress for payments.
+Stores simulator scenario progress for payments.
 
 Owned data:
 
@@ -239,11 +243,11 @@ Owned data:
 - completion marker
 - timestamps
 
-Scenario execution behavior is defined later. The domain only reserves ownership for storing deterministic scenario progress.
+Scenario execution uses this state to track deterministic scenario progress.
 
 ### Webhook Delivery Attempts
 
-Stores future webhook delivery attempt records.
+Stores webhook delivery attempt records.
 
 Owned data:
 
@@ -257,7 +261,7 @@ Owned data:
 - response summary
 - timestamps
 
-Webhook delivery behavior is defined later. The domain only reserves ownership for delivery tracking state.
+Webhook delivery uses this state to track delivery attempts and outcomes.
 
 ## Contract Relationship
 

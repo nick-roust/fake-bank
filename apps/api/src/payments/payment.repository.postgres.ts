@@ -112,6 +112,7 @@ export function createPostgresPaymentRepository(pool: DbPool): PaymentRepository
               FROM updated_payment
               RETURNING
                 lifecycle_event_id,
+                payment_id,
                 previous_status,
                 next_status,
                 reason,

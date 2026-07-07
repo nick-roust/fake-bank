@@ -19,7 +19,7 @@ const config: ApiConfig = {
   port: 8080,
   publicBaseUrl: 'http://localhost:8080',
   checkoutBaseUrl: 'http://localhost:5173',
-  databaseUrl: 'postgres://fake_bank:fake_bank@localhost:5432/fake_bank',
+  databaseUrl: 'postgres://fake_bank:fake_bank@localhost:55432/fake_bank',
 };
 
 test('health endpoint returns ok', () => {

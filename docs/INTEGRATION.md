@@ -40,9 +40,7 @@ pnpm dev:services
 Apply database migrations:
 
 ```sh
-for migration in db/migrations/*.sql; do
-  psql "$DATABASE_URL" -f "$migration"
-done
+pnpm db:migrate
 ```
 
 Start the Fake-bank API:
