@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { ScenarioProviderError } from '../scenarios/scenario.service.js';
 import type { ApiAppDependencies } from '../server/app.js';
 import { sendError } from '../server/errors.js';
 import {
@@ -29,6 +30,7 @@ export function registerPaymentRoutes(
     dependencies.payments,
     dependencies.config,
     dependencies.webhooks,
+    dependencies.scenarios,
   );
 
   app.post<{ Body: CreatePaymentInput }>('/v1/payments', {
@@ -110,6 +112,11 @@ export function registerPaymentRoutes(
               previous_status: error.previousStatus,
               requested_status: error.nextStatus,
             });
+            return;
+          }
+
+          if (error instanceof ScenarioProviderError) {
+            sendError(reply, 500, 'provider_error', 'Provider simulator returned an error.');
             return;
           }
 

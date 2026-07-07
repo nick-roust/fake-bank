@@ -1,4 +1,7 @@
 import { createPostgresPaymentRepository } from './payments/payment.repository.postgres.js';
+import { createPaymentLifecycleService } from './payments/payment.lifecycle.js';
+import { createPostgresScenarioExecutionRepository } from './scenarios/scenario.repository.postgres.js';
+import { createScenarioEngineService } from './scenarios/scenario.service.js';
 import { createApiApp } from './server/app.js';
 import { loadConfig } from './server/config.js';
 import { createPgPool } from './server/db.js';
@@ -9,7 +12,13 @@ const config = loadConfig();
 const pool = createPgPool(config.databaseUrl);
 const payments = createPostgresPaymentRepository(pool);
 const webhooks = createWebhookDeliveryService(createPostgresWebhookDeliveryRepository(pool));
-const app = createApiApp({ config, payments, webhooks });
+const scenarios = createScenarioEngineService(
+  createPostgresScenarioExecutionRepository(pool),
+  payments,
+  createPaymentLifecycleService(payments),
+  webhooks,
+);
+const app = createApiApp({ config, payments, webhooks, scenarios });
 
 app.listen({ host: config.host, port: config.port })
   .then((address) => {

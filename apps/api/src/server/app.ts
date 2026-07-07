@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { PaymentRepository } from '../payments/payment.repository.js';
 import { registerPaymentRoutes } from '../payments/payment.routes.js';
+import type { ScenarioEngineService } from '../scenarios/scenario.service.js';
 import {
   createNoopWebhookDeliveryService,
   type WebhookDeliveryService,
@@ -13,6 +14,7 @@ export type ApiAppDependencies = {
   config: ApiConfig;
   payments: PaymentRepository;
   webhooks?: WebhookDeliveryService;
+  scenarios?: ScenarioEngineService;
 };
 
 export function createApiApp(dependencies: ApiAppDependencies): FastifyInstance {

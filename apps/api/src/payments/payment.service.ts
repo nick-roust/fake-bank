@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { ApiConfig } from '../server/config.js';
+import type { ScenarioEngineService } from '../scenarios/scenario.service.js';
 import type { WebhookDeliveryService } from '../webhooks/webhook.delivery.js';
 import { InvalidTestCardError, resolveTestCard } from './card-simulation.js';
 import {
@@ -32,6 +33,7 @@ export function createPaymentService(
   repository: PaymentRepository,
   config: Pick<ApiConfig, 'checkoutBaseUrl'>,
   webhooks?: WebhookDeliveryService,
+  scenarios?: ScenarioEngineService,
 ): PaymentService {
   const lifecycle = createPaymentLifecycleService(repository);
 
@@ -65,12 +67,19 @@ export function createPaymentService(
           }
 
           const result = resolveTestCard(input.card);
+          const scenario = payment.scenario ?? (result === 'success' ? 'card_success' : 'card_declined');
 
           return ensurePending(payment).then((pendingPayment) => {
-            const terminalStatus = result === 'success' ? 'succeeded' : 'failed';
-            const reason = result === 'success' ? 'test_card_success' : 'test_card_declined';
+            const scenarioPayment = { ...pendingPayment, scenario };
+
+            if (scenarios) {
+              return scenarios.executeAfterConfirmation(scenarioPayment);
+            }
+
+            const terminalStatus = scenario === 'card_success' ? 'succeeded' : 'failed';
+            const reason = scenario === 'card_success' ? 'test_card_success' : 'test_card_declined';
             return lifecycle
-              .transitionPayment(pendingPayment, terminalStatus, reason)
+              .transitionPayment(scenarioPayment, terminalStatus, reason)
               .then((transition) => {
                 if (!webhooks) {
                   return transition.payment;

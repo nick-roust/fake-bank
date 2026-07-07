@@ -12,7 +12,12 @@ export type WebhookDeliveryService = {
   deliverPaymentLifecycleEvent(
     payment: Payment,
     lifecycleEvent: PaymentLifecycleEvent,
+    options?: WebhookDeliveryOptions,
   ): Promise<WebhookDeliveryAttempt | null>;
+};
+
+export type WebhookDeliveryOptions = {
+  deliveryCount?: number;
 };
 
 export type WebhookHttpClient = (
@@ -36,6 +41,7 @@ export function createWebhookDeliveryService(
     deliverPaymentLifecycleEvent(
       payment: Payment,
       lifecycleEvent: PaymentLifecycleEvent,
+      options: WebhookDeliveryOptions = {},
     ): Promise<WebhookDeliveryAttempt | null> {
       const eventName = toWebhookEventName(lifecycleEvent.next_status);
 
@@ -44,47 +50,89 @@ export function createWebhookDeliveryService(
       }
 
       const payload = buildWebhookPayload(payment, lifecycleEvent, eventName);
-      const deliveryAttemptId = createDeliveryAttemptId();
+      const deliveryCount = options.deliveryCount ?? 1;
 
-      return repository
-        .createDeliveryAttempt({
-          delivery_attempt_id: deliveryAttemptId,
-          payment_id: payment.payment_id,
-          event_name: eventName,
-          target_url: payment.webhook_url,
-          payload,
-          attempt_number: 1,
-          status: 'pending',
-        })
-        .then((attempt) => {
-          return httpClient(payment.webhook_url, payload)
-            .then((response) => {
-              if (response.status >= 200 && response.status <= 299) {
-                return repository.completeDeliveryAttempt({
-                  delivery_attempt_id: attempt.delivery_attempt_id,
-                  status: 'delivered',
-                  response_status_code: response.status,
-                  response_summary: `HTTP ${response.status}`,
-                });
-              }
-
-              return repository.completeDeliveryAttempt({
-                delivery_attempt_id: attempt.delivery_attempt_id,
-                status: 'failed',
-                response_status_code: response.status,
-                response_summary: `HTTP ${response.status}`,
-              });
-            })
-            .catch((error: unknown) => {
-              return repository.completeDeliveryAttempt({
-                delivery_attempt_id: attempt.delivery_attempt_id,
-                status: 'failed',
-                response_summary: getErrorMessage(error),
-              });
-            });
-        });
+      return deliverRepeatedly({
+        repository,
+        httpClient,
+        payment,
+        eventName,
+        payload,
+        deliveryCount,
+        attemptNumber: 1,
+        lastAttempt: null,
+      });
     },
   };
+}
+
+function deliverRepeatedly(input: {
+  repository: WebhookDeliveryRepository;
+  httpClient: WebhookHttpClient;
+  payment: Payment;
+  eventName: WebhookEventName;
+  payload: WebhookPayload;
+  deliveryCount: number;
+  attemptNumber: number;
+  lastAttempt: WebhookDeliveryAttempt | null;
+}): Promise<WebhookDeliveryAttempt | null> {
+  if (input.attemptNumber > input.deliveryCount) {
+    return Promise.resolve(input.lastAttempt);
+  }
+
+  return deliverSingle(input)
+    .then((attempt) => deliverRepeatedly({
+      ...input,
+      attemptNumber: input.attemptNumber + 1,
+      lastAttempt: attempt,
+    }));
+}
+
+function deliverSingle(input: {
+  repository: WebhookDeliveryRepository;
+  httpClient: WebhookHttpClient;
+  payment: Payment;
+  eventName: WebhookEventName;
+  payload: WebhookPayload;
+  attemptNumber: number;
+}): Promise<WebhookDeliveryAttempt> {
+  return input.repository
+    .createDeliveryAttempt({
+      delivery_attempt_id: createDeliveryAttemptId(),
+      payment_id: input.payment.payment_id,
+      event_name: input.eventName,
+      target_url: input.payment.webhook_url,
+      payload: input.payload,
+      attempt_number: input.attemptNumber,
+      status: 'pending',
+    })
+    .then((attempt) => {
+      return input.httpClient(input.payment.webhook_url, input.payload)
+        .then((response) => {
+          if (response.status >= 200 && response.status <= 299) {
+            return input.repository.completeDeliveryAttempt({
+              delivery_attempt_id: attempt.delivery_attempt_id,
+              status: 'delivered',
+              response_status_code: response.status,
+              response_summary: `HTTP ${response.status}`,
+            });
+          }
+
+          return input.repository.completeDeliveryAttempt({
+            delivery_attempt_id: attempt.delivery_attempt_id,
+            status: 'failed',
+            response_status_code: response.status,
+            response_summary: `HTTP ${response.status}`,
+          });
+        })
+        .catch((error: unknown) => {
+          return input.repository.completeDeliveryAttempt({
+            delivery_attempt_id: attempt.delivery_attempt_id,
+            status: 'failed',
+            response_summary: getErrorMessage(error),
+          });
+        });
+    });
 }
 
 export function buildWebhookPayload(

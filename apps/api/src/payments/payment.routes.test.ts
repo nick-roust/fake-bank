@@ -1,11 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import type { FastifyInstance } from 'fastify';
 import { createApiApp } from '../server/app.js';
 import type { ApiConfig } from '../server/config.js';
+import { createMemoryScenarioExecutionRepository } from '../scenarios/scenario.repository.memory.js';
+import {
+  createScenarioEngineService,
+  type ScenarioTaskScheduler,
+} from '../scenarios/scenario.service.js';
 import { createWebhookDeliveryService } from '../webhooks/webhook.delivery.js';
 import { createMemoryWebhookDeliveryRepository } from '../webhooks/webhook.repository.memory.js';
 import { createPaymentLifecycleService } from './payment.lifecycle.js';
 import { createMemoryPaymentRepository } from './payment.repository.memory.js';
+import type { PaymentScenario } from './payment.types.js';
 
 const config: ApiConfig = {
   host: 'localhost',
@@ -374,6 +381,246 @@ test('records failed webhook delivery without changing payment state', () => {
   });
 });
 
+test('executes card_success scenario with success webhook', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const scenarios = createMemoryScenarioExecutionRepository();
+  const webhooks = createWebhookDeliveryService(webhookAttempts, () => {
+    return Promise.resolve({ status: 204, body: '' });
+  });
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks,
+    scenarios: createScenarioEngineService(
+      scenarios,
+      payments,
+      createPaymentLifecycleService(payments),
+      webhooks,
+    ),
+  });
+
+  return createScenarioPayment(app, 'card_success')
+    .then((created) => confirmScenarioPayment(app, created.payment_id, '4242424242424242'))
+    .then((response) => {
+      assert.equal(response.statusCode, 200);
+      assert.equal(response.json().status, 'succeeded');
+
+      return webhookAttempts.listDeliveryAttempts(response.json().payment_id);
+    })
+    .then((attempts) => {
+      assert.equal(attempts.length, 1);
+      assert.equal(attempts[0]?.event_name, 'payment.succeeded');
+      assert.equal(attempts[0]?.status, 'delivered');
+      return app.close();
+    });
+});
+
+test('executes card_declined scenario with failed webhook', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const scenarios = createMemoryScenarioExecutionRepository();
+  const webhooks = createWebhookDeliveryService(webhookAttempts, () => {
+    return Promise.resolve({ status: 200, body: 'ok' });
+  });
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks,
+    scenarios: createScenarioEngineService(
+      scenarios,
+      payments,
+      createPaymentLifecycleService(payments),
+      webhooks,
+    ),
+  });
+
+  return createScenarioPayment(app, 'card_declined')
+    .then((created) => confirmScenarioPayment(app, created.payment_id, '4242424242424242'))
+    .then((response) => {
+      assert.equal(response.statusCode, 200);
+      assert.equal(response.json().status, 'failed');
+
+      return webhookAttempts.listDeliveryAttempts(response.json().payment_id);
+    })
+    .then((attempts) => {
+      assert.equal(attempts.length, 1);
+      assert.equal(attempts[0]?.event_name, 'payment.failed');
+      assert.equal(attempts[0]?.status, 'delivered');
+      return app.close();
+    });
+});
+
+test('executes delayed_success scenario through scheduled continuation', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const scenarios = createMemoryScenarioExecutionRepository();
+  const manualScheduler = createManualScenarioScheduler();
+  const webhooks = createWebhookDeliveryService(webhookAttempts, () => {
+    return Promise.resolve({ status: 200, body: 'ok' });
+  });
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks,
+    scenarios: createScenarioEngineService(
+      scenarios,
+      payments,
+      createPaymentLifecycleService(payments),
+      webhooks,
+      manualScheduler.scheduler,
+    ),
+  });
+
+  return createScenarioPayment(app, 'delayed_success')
+    .then((created) => {
+      return confirmScenarioPayment(app, created.payment_id, '4242424242424242')
+        .then((response) => {
+          assert.equal(response.statusCode, 200);
+          assert.equal(response.json().status, 'pending');
+          assert.equal(manualScheduler.taskCount(), 1);
+          return webhookAttempts.listDeliveryAttempts(created.payment_id)
+            .then((attempts) => {
+              assert.equal(attempts.length, 0);
+              return manualScheduler.runNext();
+            })
+            .then(() => payments.findPaymentById(created.payment_id))
+            .then((payment) => {
+              assert.equal(payment?.status, 'succeeded');
+              return webhookAttempts.listDeliveryAttempts(created.payment_id);
+            });
+        });
+    })
+    .then((attempts) => {
+      assert.equal(attempts.length, 1);
+      assert.equal(attempts[0]?.event_name, 'payment.succeeded');
+      return app.close();
+    });
+});
+
+test('executes timeout scenario without terminal transition', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const scenarios = createMemoryScenarioExecutionRepository();
+  const manualScheduler = createManualScenarioScheduler();
+  const webhooks = createWebhookDeliveryService(webhookAttempts, () => {
+    return Promise.resolve({ status: 200, body: 'ok' });
+  });
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks,
+    scenarios: createScenarioEngineService(
+      scenarios,
+      payments,
+      createPaymentLifecycleService(payments),
+      webhooks,
+      manualScheduler.scheduler,
+    ),
+  });
+
+  return createScenarioPayment(app, 'timeout')
+    .then((created) => {
+      return confirmScenarioPayment(app, created.payment_id, '4242424242424242')
+        .then((response) => {
+          assert.equal(response.statusCode, 200);
+          assert.equal(response.json().status, 'pending');
+          assert.equal(manualScheduler.taskCount(), 0);
+          return Promise.all([
+            scenarios.findScenarioStateByPaymentId(created.payment_id),
+            webhookAttempts.listDeliveryAttempts(created.payment_id),
+          ]);
+        });
+    })
+    .then(([state, attempts]) => {
+      assert.equal(state?.current_step, 'timeout');
+      assert.equal(attempts.length, 0);
+      return app.close();
+    });
+});
+
+test('executes duplicate_webhook scenario with repeated payload delivery', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const scenarios = createMemoryScenarioExecutionRepository();
+  const webhooks = createWebhookDeliveryService(webhookAttempts, () => {
+    return Promise.resolve({ status: 200, body: 'ok' });
+  });
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks,
+    scenarios: createScenarioEngineService(
+      scenarios,
+      payments,
+      createPaymentLifecycleService(payments),
+      webhooks,
+    ),
+  });
+
+  return createScenarioPayment(app, 'duplicate_webhook')
+    .then((created) => {
+      return confirmScenarioPayment(app, created.payment_id, '4242424242424242')
+        .then((response) => {
+          assert.equal(response.statusCode, 200);
+          assert.equal(response.json().status, 'succeeded');
+          return webhookAttempts.listDeliveryAttempts(created.payment_id);
+        });
+    })
+    .then((attempts) => {
+      assert.equal(attempts.length, 3);
+      assert.deepEqual(attempts.map((attempt) => attempt.attempt_number), [1, 2, 3]);
+      assert.equal(attempts[0]?.payload.event_id, attempts[1]?.payload.event_id);
+      assert.equal(attempts[1]?.payload.event_id, attempts[2]?.payload.event_id);
+      assert.deepEqual(attempts.map((attempt) => attempt.status), [
+        'delivered',
+        'delivered',
+        'delivered',
+      ]);
+      return app.close();
+    });
+});
+
+test('executes provider_error scenario while preserving payment consistency', () => {
+  const payments = createMemoryPaymentRepository();
+  const webhookAttempts = createMemoryWebhookDeliveryRepository();
+  const scenarios = createMemoryScenarioExecutionRepository();
+  const webhooks = createWebhookDeliveryService(webhookAttempts, () => {
+    return Promise.resolve({ status: 200, body: 'ok' });
+  });
+  const app = createApiApp({
+    config,
+    payments,
+    webhooks,
+    scenarios: createScenarioEngineService(
+      scenarios,
+      payments,
+      createPaymentLifecycleService(payments),
+      webhooks,
+    ),
+  });
+
+  return createScenarioPayment(app, 'provider_error')
+    .then((created) => {
+      return confirmScenarioPayment(app, created.payment_id, '4242424242424242')
+        .then((response) => {
+          assert.equal(response.statusCode, 500);
+          assert.equal(response.json().error_code, 'provider_error');
+          return Promise.all([
+            payments.findPaymentById(created.payment_id),
+            scenarios.findScenarioStateByPaymentId(created.payment_id),
+            webhookAttempts.listDeliveryAttempts(created.payment_id),
+          ]);
+        });
+    })
+    .then(([payment, state, attempts]) => {
+      assert.equal(payment?.status, 'pending');
+      assert.equal(state?.current_step, 'provider_error');
+      assert.equal(attempts.length, 0);
+      return app.close();
+    });
+});
+
 test('rejects unsupported test card input', () => {
   const app = createApiApp({ config, payments: createMemoryPaymentRepository() });
 
@@ -485,3 +732,69 @@ test('rejects invalid lifecycle transitions', () => {
     );
   });
 });
+
+function createScenarioPayment(app: FastifyInstance, scenario: PaymentScenario): Promise<{
+  payment_id: string;
+  status: string;
+  checkout_url: string;
+}> {
+  return app.inject({
+    method: 'POST',
+    url: '/v1/payments',
+    payload: {
+      merchant_id: 'demo-shop',
+      merchant_reference: 'order_10001',
+      amount: 199.99,
+      currency: 'EUR',
+      payment_method: 'card',
+      return_url: 'https://merchant.example/checkout/return',
+      webhook_url: 'https://merchant.example/webhooks/payments',
+      scenario,
+    },
+  }).then((response) => {
+    assert.equal(response.statusCode, 201);
+    return response.json();
+  });
+}
+
+function confirmScenarioPayment(
+  app: FastifyInstance,
+  paymentId: string,
+  cardNumber: string,
+) {
+  return app.inject({
+    method: 'POST',
+    url: `/v1/payments/${paymentId}/confirm`,
+    payload: {
+      payment_method: 'card',
+      card: {
+        number: cardNumber,
+        expiry: '12/30',
+        cvv: '123',
+      },
+    },
+  });
+}
+
+function createManualScenarioScheduler(): {
+  scheduler: ScenarioTaskScheduler;
+  runNext(): Promise<void>;
+  taskCount(): number;
+} {
+  const tasks: Array<() => Promise<void>> = [];
+
+  return {
+    scheduler: {
+      schedule(task: () => Promise<void>): void {
+        tasks.push(task);
+      },
+    },
+    runNext(): Promise<void> {
+      const task = tasks.shift();
+      return task ? task() : Promise.resolve();
+    },
+    taskCount(): number {
+      return tasks.length;
+    },
+  };
+}
