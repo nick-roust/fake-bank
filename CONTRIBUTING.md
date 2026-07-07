@@ -4,7 +4,7 @@ Thank you for considering a contribution to Fake-bank.
 
 ## Project Boundary
 
-Fake-bank is an independent payment provider simulator. Contributions must keep the project generic and must not bind it to a specific external product, platform, or runtime.
+Fake-bank is an independent payment provider simulator. Contributions must keep the project generic and must not bind it to a specific external system or runtime.
 
 ## Documentation Language
 
