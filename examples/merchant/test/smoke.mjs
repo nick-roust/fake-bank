@@ -46,7 +46,10 @@ test('example merchant creates payment and records webhook result', () => {
           });
         })
         .then((paymentPage) => {
-          assert.match(paymentPage, /Open hosted checkout/);
+          assert.match(paymentPage, /Payment Result/);
+          assert.match(paymentPage, /Open checkout/);
+          assert.match(paymentPage, /199.99 EUR/);
+          assert.match(paymentPage, /card_success/);
           assert.match(paymentPage, /http:\/\/checkout.example\/checkout\/pay_example/);
 
           return fetch(`${merchantBaseUrl}/webhooks/fake-bank`, {
@@ -75,7 +78,7 @@ test('example merchant creates payment and records webhook result', () => {
           });
         })
         .then((finalPage) => {
-          assert.match(finalPage, /succeeded/);
+          assert.match(finalPage, /Succeeded/);
           assert.match(finalPage, /payment\.succeeded/);
         });
     })
