@@ -142,10 +142,10 @@ function renderHome(payments) {
         <p class="subtitle">Demo merchant for testing payment flows</p>
       </div>
       <ol class="flow-steps" aria-label="Payment flow">
-        <li>Create Payment</li>
-        <li>Checkout</li>
-        <li>Payment Result</li>
-        <li>Webhook Result</li>
+        <li><span>1</span>Create Payment</li>
+        <li><span>2</span>Checkout</li>
+        <li><span>3</span>Payment Result</li>
+        <li><span>4</span>Webhook Result</li>
       </ol>
     </header>
 
@@ -374,23 +374,44 @@ function page(title, content) {
       .flow-steps {
         display: grid;
         grid-auto-flow: column;
-        gap: 10px;
+        gap: 22px;
         margin: 0;
         padding: 0;
         list-style: none;
-        color: #344054;
+        color: #526071;
         font-size: 13px;
-        font-weight: 700;
+        font-weight: 800;
       }
 
       .flow-steps li {
-        min-height: 34px;
+        position: relative;
         display: inline-flex;
         align-items: center;
-        border: 1px solid #d8dee8;
+        gap: 8px;
+        white-space: nowrap;
+      }
+
+      .flow-steps li:not(:last-child)::after {
+        position: absolute;
+        top: 50%;
+        left: calc(100% + 8px);
+        width: 8px;
+        height: 1px;
+        background: #aeb7c4;
+        content: "";
+      }
+
+      .flow-steps span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border: 1px solid #cfd7e3;
         border-radius: 999px;
-        background: #ffffff;
-        padding: 6px 12px;
+        color: #2457a6;
+        background: #eef4ff;
+        font-size: 12px;
       }
 
       .grid-layout {
