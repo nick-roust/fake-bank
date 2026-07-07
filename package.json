@@ -3,13 +3,21 @@
   "version": "0.1.0",
   "description": "Open-source payment provider simulator with API, hosted checkout and webhook scenarios.",
   "license": "Apache-2.0",
-  "private": false,
+  "private": true,
   "type": "module",
   "packageManager": "pnpm@11.0.9",
   "scripts": {
-    "dev": "echo \"Development workspace is not initialized yet.\"",
-    "test": "echo \"Tests are not initialized yet.\"",
-    "lint:openapi": "pnpm --package=@redocly/cli dlx redocly lint openapi/openapi.yaml"
+    "dev": "pnpm -r --parallel dev",
+    "dev:services": "docker compose --env-file .env -f docker/docker-compose.yml up -d",
+    "dev:services:down": "docker compose --env-file .env -f docker/docker-compose.yml down",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint:openapi": "redocly lint openapi/openapi.yaml",
+    "validate": "pnpm lint:openapi && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^2.37.0",
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "payments",
