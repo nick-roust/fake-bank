@@ -15,11 +15,29 @@ servers:
     description: Local development server
 security: []
 tags:
+  - name: System
+    description: Service status endpoints.
   - name: Payments
     description: Create payments, retrieve payment state, and confirm checkout.
   - name: Webhooks
     description: Validate webhook integrations with deterministic test events.
 paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Get service health
+      description: Returns basic API service health status.
+      operationId: getHealth
+      responses:
+        "200":
+          description: API service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /v1/payments:
     post:
       tags:
@@ -27,8 +45,8 @@ paths:
       summary: Create a payment
       description: >
         Creates a payment and returns a hosted checkout URL that can be opened
-        by a buyer. The payment starts in a non-terminal state and is completed
-        through checkout confirmation.
+        by a buyer. The payment starts in the created state and can be advanced
+        by later payment processing behavior.
       operationId: createPayment
       requestBody:
         required: true
@@ -59,7 +77,7 @@ paths:
                 created:
                   value:
                     payment_id: pay_000001
-                    status: pending
+                    status: created
                     checkout_url: http://localhost:8080/checkout/pay_000001
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -570,3 +588,13 @@ components:
           type: object
           description: Optional structured error details.
           additionalProperties: true
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok

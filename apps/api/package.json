@@ -4,15 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "echo \"API development server is not implemented yet.\"",
-    "test": "echo \"API tests are not implemented yet.\"",
+    "dev": "tsx watch src/index.ts",
+    "test": "tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "fastify": "^5.6.2"
+    "fastify": "^5.6.2",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@types/pg": "^8.20.0",
+    "tsx": "^4.23.0",
     "typescript": "^5.9.3"
   }
 }
