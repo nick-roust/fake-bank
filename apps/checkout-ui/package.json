@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "echo \"Checkout UI development server is not implemented yet.\"",
+    "dev": "vite --host ${CHECKOUT_UI_HOST:-localhost} --port ${CHECKOUT_UI_PORT:-5173}",
+    "build": "vite build",
+    "preview": "vite preview --host ${CHECKOUT_UI_HOST:-localhost} --port ${CHECKOUT_UI_PORT:-5173}",
     "test": "echo \"Checkout UI tests are not implemented yet.\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

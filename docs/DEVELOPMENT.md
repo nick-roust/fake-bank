@@ -65,7 +65,7 @@ Stop local infrastructure services:
 pnpm dev:services:down
 ```
 
-The development workspace is prepared for implementation phases. Payment behavior is not implemented in this phase.
+The development workspace is prepared for incremental payment provider simulator implementation.
 
 ## Workspace Layout
 
@@ -86,6 +86,42 @@ packages/
 `packages/shared` contains shared TypeScript contracts and utilities for Fake-bank workspaces.
 
 `packages/openapi` contains OpenAPI-related workspace tooling.
+
+## API Service
+
+Start the API service:
+
+```sh
+pnpm --filter @fake-bank/api dev
+```
+
+The API service listens on `http://localhost:8080` by default.
+
+Create payments through the API and use the returned `checkout_url` to open the hosted checkout page.
+
+## Checkout UI
+
+Start the hosted checkout application:
+
+```sh
+pnpm --filter @fake-bank/checkout-ui dev
+```
+
+The checkout application listens on `http://localhost:5173` by default.
+
+Hosted checkout URLs use this format:
+
+```text
+http://localhost:5173/checkout/{payment_id}
+```
+
+The checkout application loads payment state from the API and submits payment confirmation requests to the API. During local development, Vite proxies `/v1` requests to the API service.
+
+Build the checkout application:
+
+```sh
+pnpm --filter @fake-bank/checkout-ui build
+```
 
 ## Database
 
@@ -183,8 +219,11 @@ Application variables:
 
 - `API_HOST`
 - `API_PORT`
+- `API_PUBLIC_BASE_URL`
 - `CHECKOUT_UI_HOST`
 - `CHECKOUT_UI_PORT`
+- `CHECKOUT_PUBLIC_BASE_URL`
+- `VITE_API_BASE_URL`
 
 ## Commit Rules
 

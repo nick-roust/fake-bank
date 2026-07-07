@@ -12,9 +12,10 @@
     "dev:services:down": "docker compose --env-file .env -f docker/docker-compose.yml down",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
+    "build:checkout": "pnpm --filter @fake-bank/checkout-ui build",
     "lint:openapi": "redocly lint openapi/openapi.yaml",
     "lint:migrations": "node scripts/validate-migrations.mjs",
-    "validate": "pnpm lint:openapi && pnpm lint:migrations && pnpm typecheck && pnpm test"
+    "validate": "pnpm lint:openapi && pnpm lint:migrations && pnpm typecheck && pnpm test && pnpm build:checkout"
   },
   "devDependencies": {
     "@redocly/cli": "^2.37.0",

@@ -78,7 +78,7 @@ paths:
                   value:
                     payment_id: pay_000001
                     status: created
-                    checkout_url: http://localhost:8080/checkout/pay_000001
+                    checkout_url: http://localhost:5173/checkout/pay_000001
         "400":
           $ref: "#/components/responses/BadRequest"
         "500":
@@ -109,7 +109,7 @@ paths:
                     currency: EUR
                     payment_method: card
                     status: pending
-                    checkout_url: http://localhost:8080/checkout/pay_000001
+                    checkout_url: http://localhost:5173/checkout/pay_000001
                     return_url: https://merchant.example/checkout/return
                     webhook_url: https://merchant.example/webhooks/payments
                     scenario: card_success
@@ -170,7 +170,7 @@ paths:
                     currency: EUR
                     payment_method: card
                     status: succeeded
-                    checkout_url: http://localhost:8080/checkout/pay_000001
+                    checkout_url: http://localhost:5173/checkout/pay_000001
                     return_url: https://merchant.example/checkout/return
                     webhook_url: https://merchant.example/webhooks/payments
                     scenario: card_success
@@ -404,7 +404,7 @@ components:
           type: string
           format: uri
           description: Hosted checkout URL for the buyer.
-          example: http://localhost:8080/checkout/pay_000001
+          example: http://localhost:5173/checkout/pay_000001
     Payment:
       type: object
       additionalProperties: false
@@ -440,7 +440,7 @@ components:
         checkout_url:
           type: string
           format: uri
-          example: http://localhost:8080/checkout/pay_000001
+          example: http://localhost:5173/checkout/pay_000001
         return_url:
           type: string
           format: uri

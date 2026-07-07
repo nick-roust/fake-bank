@@ -29,14 +29,14 @@ export type PaymentService = {
 
 export function createPaymentService(
   repository: PaymentRepository,
-  config: Pick<ApiConfig, 'publicBaseUrl'>,
+  config: Pick<ApiConfig, 'checkoutBaseUrl'>,
 ): PaymentService {
   const lifecycle = createPaymentLifecycleService(repository);
 
   return {
     createPayment(input: CreatePaymentInput): Promise<CreatePaymentResponse> {
       const paymentId = createPaymentId();
-      const checkoutUrl = `${config.publicBaseUrl}/checkout/${paymentId}`;
+      const checkoutUrl = `${config.checkoutBaseUrl}/checkout/${paymentId}`;
       const record: CreatePaymentRecordInput = {
         ...input,
         payment_id: paymentId,

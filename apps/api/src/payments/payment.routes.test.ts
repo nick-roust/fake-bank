@@ -9,6 +9,7 @@ const config: ApiConfig = {
   host: 'localhost',
   port: 8080,
   publicBaseUrl: 'http://localhost:8080',
+  checkoutBaseUrl: 'http://localhost:5173',
   databaseUrl: 'postgres://fake_bank:fake_bank@localhost:5432/fake_bank',
 };
 
@@ -46,7 +47,7 @@ test('creates a payment with created status and checkout URL', () => {
     const body = response.json();
     assert.match(body.payment_id, /^pay_[A-Za-z0-9]+$/);
     assert.equal(body.status, 'created');
-    assert.equal(body.checkout_url, `http://localhost:8080/checkout/${body.payment_id}`);
+    assert.equal(body.checkout_url, `http://localhost:5173/checkout/${body.payment_id}`);
     return app.close();
   });
 });
