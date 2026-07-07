@@ -87,6 +87,32 @@ packages/
 
 `packages/openapi` contains OpenAPI-related workspace tooling.
 
+## Database
+
+PostgreSQL runs through Docker Compose for local development.
+
+Start the local database:
+
+```sh
+pnpm dev:services
+```
+
+Stop the local database:
+
+```sh
+pnpm dev:services:down
+```
+
+Database migrations live in `db/migrations`.
+
+Apply the current schema manually during this foundation phase:
+
+```sh
+psql "$DATABASE_URL" -f db/migrations/0001_payment_persistence.sql
+```
+
+Automated migration execution will be added in a later implementation phase.
+
 ## API Contract
 
 The API contract is defined in `openapi/openapi.yaml`. API implementation changes must be made contract-first.
@@ -125,6 +151,12 @@ Validate the OpenAPI contract with:
 
 ```sh
 pnpm lint:openapi
+```
+
+Validate database migration structure with:
+
+```sh
+pnpm lint:migrations
 ```
 
 Run tests with:

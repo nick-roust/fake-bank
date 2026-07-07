@@ -13,7 +13,8 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "lint:openapi": "redocly lint openapi/openapi.yaml",
-    "validate": "pnpm lint:openapi && pnpm typecheck && pnpm test"
+    "lint:migrations": "node scripts/validate-migrations.mjs",
+    "validate": "pnpm lint:openapi && pnpm lint:migrations && pnpm typecheck && pnpm test"
   },
   "devDependencies": {
     "@redocly/cli": "^2.37.0",
