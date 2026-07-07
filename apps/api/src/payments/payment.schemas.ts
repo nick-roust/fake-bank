@@ -93,6 +93,25 @@ export const paymentResponseSchema = {
   },
 } as const;
 
+export const confirmPaymentBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['payment_method', 'card'],
+  properties: {
+    payment_method: { type: 'string', enum: paymentMethods },
+    card: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['number', 'expiry', 'cvv'],
+      properties: {
+        number: { type: 'string', pattern: '^[0-9]{12,19}$' },
+        expiry: { type: 'string', pattern: '^(0[1-9]|1[0-2])/[0-9]{2}$' },
+        cvv: { type: 'string', pattern: '^[0-9]{3,4}$' },
+      },
+    },
+  },
+} as const;
+
 export const errorResponseSchema = {
   type: 'object',
   additionalProperties: false,

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createApiApp } from '../server/app.js';
 import type { ApiConfig } from '../server/config.js';
+import { createPaymentLifecycleService } from './payment.lifecycle.js';
 import { createMemoryPaymentRepository } from './payment.repository.memory.js';
 
 const config: ApiConfig = {
@@ -113,5 +114,209 @@ test('rejects invalid create payment payload', () => {
   }).then((response) => {
     assert.equal(response.statusCode, 400);
     return app.close();
+  });
+});
+
+test('confirms a successful payment through created to pending to succeeded', () => {
+  const payments = createMemoryPaymentRepository();
+  const app = createApiApp({ config, payments });
+
+  return app.inject({
+    method: 'POST',
+    url: '/v1/payments',
+    payload: {
+      merchant_id: 'demo-shop',
+      amount: 199.99,
+      currency: 'EUR',
+      payment_method: 'card',
+      return_url: 'https://merchant.example/checkout/return',
+      webhook_url: 'https://merchant.example/webhooks/payments',
+    },
+  }).then((createdResponse) => {
+    const created = createdResponse.json();
+
+    return app.inject({
+      method: 'POST',
+      url: `/v1/payments/${created.payment_id}/confirm`,
+      payload: {
+        payment_method: 'card',
+        card: {
+          number: '4242424242424242',
+          expiry: '12/30',
+          cvv: '123',
+        },
+      },
+    }).then((response) => {
+      assert.equal(response.statusCode, 200);
+      const payment = response.json();
+      assert.equal(payment.status, 'succeeded');
+
+      return payments.listLifecycleEvents(created.payment_id).then((events) => {
+        assert.deepEqual(events.map((event) => event.next_status), ['pending', 'succeeded']);
+        assert.deepEqual(events.map((event) => event.reason), [
+          'payment_confirmed',
+          'test_card_success',
+        ]);
+        return app.close();
+      });
+    });
+  });
+});
+
+test('confirms a declined payment through created to pending to failed', () => {
+  const payments = createMemoryPaymentRepository();
+  const app = createApiApp({ config, payments });
+
+  return app.inject({
+    method: 'POST',
+    url: '/v1/payments',
+    payload: {
+      merchant_id: 'demo-shop',
+      amount: 199.99,
+      currency: 'EUR',
+      payment_method: 'card',
+      return_url: 'https://merchant.example/checkout/return',
+      webhook_url: 'https://merchant.example/webhooks/payments',
+    },
+  }).then((createdResponse) => {
+    const created = createdResponse.json();
+
+    return app.inject({
+      method: 'POST',
+      url: `/v1/payments/${created.payment_id}/confirm`,
+      payload: {
+        payment_method: 'card',
+        card: {
+          number: '4000000000000002',
+          expiry: '12/30',
+          cvv: '123',
+        },
+      },
+    }).then((response) => {
+      assert.equal(response.statusCode, 200);
+      const payment = response.json();
+      assert.equal(payment.status, 'failed');
+
+      return payments.listLifecycleEvents(created.payment_id).then((events) => {
+        assert.deepEqual(events.map((event) => event.next_status), ['pending', 'failed']);
+        assert.deepEqual(events.map((event) => event.reason), [
+          'payment_confirmed',
+          'test_card_declined',
+        ]);
+        return app.close();
+      });
+    });
+  });
+});
+
+test('rejects unsupported test card input', () => {
+  const app = createApiApp({ config, payments: createMemoryPaymentRepository() });
+
+  return app.inject({
+    method: 'POST',
+    url: '/v1/payments',
+    payload: {
+      merchant_id: 'demo-shop',
+      amount: 199.99,
+      currency: 'EUR',
+      payment_method: 'card',
+      return_url: 'https://merchant.example/checkout/return',
+      webhook_url: 'https://merchant.example/webhooks/payments',
+    },
+  }).then((createdResponse) => {
+    const created = createdResponse.json();
+
+    return app.inject({
+      method: 'POST',
+      url: `/v1/payments/${created.payment_id}/confirm`,
+      payload: {
+        payment_method: 'card',
+        card: {
+          number: '4111111111111111',
+          expiry: '12/30',
+          cvv: '123',
+        },
+      },
+    }).then((response) => {
+      assert.equal(response.statusCode, 400);
+      assert.equal(response.json().error_code, 'invalid_request');
+      return app.close();
+    });
+  });
+});
+
+test('rejects confirming a terminal payment', () => {
+  const app = createApiApp({ config, payments: createMemoryPaymentRepository() });
+
+  return app.inject({
+    method: 'POST',
+    url: '/v1/payments',
+    payload: {
+      merchant_id: 'demo-shop',
+      amount: 199.99,
+      currency: 'EUR',
+      payment_method: 'card',
+      return_url: 'https://merchant.example/checkout/return',
+      webhook_url: 'https://merchant.example/webhooks/payments',
+    },
+  }).then((createdResponse) => {
+    const created = createdResponse.json();
+    const confirmPayload = {
+      payment_method: 'card',
+      card: {
+        number: '4242424242424242',
+        expiry: '12/30',
+        cvv: '123',
+      },
+    };
+
+    return app.inject({
+      method: 'POST',
+      url: `/v1/payments/${created.payment_id}/confirm`,
+      payload: confirmPayload,
+    }).then((firstConfirm) => {
+      assert.equal(firstConfirm.statusCode, 200);
+      return app.inject({
+        method: 'POST',
+        url: `/v1/payments/${created.payment_id}/confirm`,
+        payload: confirmPayload,
+      });
+    }).then((secondConfirm) => {
+      assert.equal(secondConfirm.statusCode, 409);
+      assert.equal(secondConfirm.json().error_code, 'payment_already_finalized');
+      return app.close();
+    });
+  });
+});
+
+test('rejects invalid lifecycle transitions', () => {
+  const payments = createMemoryPaymentRepository();
+  const lifecycle = createPaymentLifecycleService(payments);
+
+  return payments.createPayment({
+    payment_id: 'pay_invalidtransition',
+    merchant_id: 'demo-shop',
+    amount: 199.99,
+    currency: 'EUR',
+    payment_method: 'card',
+    status: 'created',
+    checkout_url: 'http://localhost:8080/checkout/pay_invalidtransition',
+    return_url: 'https://merchant.example/checkout/return',
+    webhook_url: 'https://merchant.example/webhooks/payments',
+  }).then((createdPayment) => {
+    return assert.rejects(
+      () => lifecycle.transitionPayment(createdPayment, 'succeeded', 'invalid_direct_success'),
+      /Invalid payment transition/,
+    ).then(() => lifecycle.transitionPayment(createdPayment, 'pending', 'valid_pending'));
+  }).then((pendingPayment) => {
+    return assert.rejects(
+      () => lifecycle.transitionPayment(pendingPayment, 'created', 'invalid_reopen'),
+      /Invalid payment transition/,
+    ).then(() => lifecycle.transitionPayment(pendingPayment, 'succeeded', 'valid_success'));
+  }).then((succeededPayment) => {
+    return assert.rejects(
+      () => lifecycle.transitionPayment(succeededPayment, 'failed', 'invalid_terminal_change'),
+      /Invalid payment transition/,
+    );
   });
 });

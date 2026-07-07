@@ -2,7 +2,9 @@ import type { QueryResultRow } from 'pg';
 import type { DbPool } from '../server/db.js';
 import type {
   CreatePaymentRecordInput,
+  PaymentLifecycleEvent,
   PaymentRepository,
+  PaymentTransitionInput,
 } from './payment.repository.js';
 import type { Payment, PaymentScenario, PaymentStatus } from './payment.types.js';
 
@@ -21,6 +23,15 @@ type PaymentRow = QueryResultRow & {
   metadata: Record<string, string>;
   created_at: Date;
   updated_at: Date;
+};
+
+type LifecycleEventRow = QueryResultRow & {
+  lifecycle_event_id: string;
+  payment_id: string;
+  previous_status: PaymentStatus | null;
+  next_status: PaymentStatus;
+  reason: string;
+  created_at: Date;
 };
 
 export function createPostgresPaymentRepository(pool: DbPool): PaymentRepository {
@@ -70,20 +81,71 @@ export function createPostgresPaymentRepository(pool: DbPool): PaymentRepository
         .then((result) => (result.rows[0] ? toPayment(result.rows[0]) : null));
     },
 
-    updatePaymentStatus(paymentId: string, status: PaymentStatus): Promise<Payment | null> {
+    transitionPayment(input: PaymentTransitionInput): Promise<Payment | null> {
       return pool
         .query<PaymentRow>(
           `
-            UPDATE payments
-            SET status = $2, updated_at = now()
-            WHERE payment_id = $1
-            RETURNING *
+            WITH updated_payment AS (
+              UPDATE payments
+              SET status = $3, updated_at = now()
+              WHERE payment_id = $1 AND status = $2
+              RETURNING *
+            ),
+            lifecycle_event AS (
+              INSERT INTO payment_lifecycle_events (
+                lifecycle_event_id,
+                payment_id,
+                previous_status,
+                next_status,
+                reason
+              )
+              SELECT $5, payment_id, $2, $3, $4
+              FROM updated_payment
+            )
+            SELECT *
+            FROM updated_payment
           `,
-          [paymentId, status],
+          [
+            input.payment_id,
+            input.previous_status,
+            input.next_status,
+            input.reason,
+            input.lifecycle_event_id,
+          ],
         )
         .then((result) => (result.rows[0] ? toPayment(result.rows[0]) : null));
     },
+
+    listLifecycleEvents(paymentId: string): Promise<PaymentLifecycleEvent[]> {
+      return pool
+        .query<LifecycleEventRow>(
+          `
+            SELECT *
+            FROM payment_lifecycle_events
+            WHERE payment_id = $1
+            ORDER BY created_at ASC
+          `,
+          [paymentId],
+        )
+        .then((result) => result.rows.map(toLifecycleEvent));
+    },
   };
+}
+
+function toLifecycleEvent(row: LifecycleEventRow): PaymentLifecycleEvent {
+  const event: PaymentLifecycleEvent = {
+    lifecycle_event_id: row.lifecycle_event_id,
+    payment_id: row.payment_id,
+    next_status: row.next_status,
+    reason: row.reason,
+    created_at: row.created_at.toISOString(),
+  };
+
+  if (row.previous_status !== null) {
+    event.previous_status = row.previous_status;
+  }
+
+  return event;
 }
 
 function toPayment(row: PaymentRow | undefined): Payment {

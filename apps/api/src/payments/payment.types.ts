@@ -47,3 +47,12 @@ export type CreatePaymentResponse = {
   status: PaymentStatus;
   checkout_url: string;
 };
+
+export type ConfirmPaymentInput = {
+  payment_method: PaymentMethod;
+  card: {
+    number: string;
+    expiry: string;
+    cvv: string;
+  };
+};
