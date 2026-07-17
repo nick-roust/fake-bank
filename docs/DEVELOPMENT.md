@@ -63,6 +63,28 @@ pnpm dev:services:down
 Optional local environment overrides can be placed in `.env`. The default local setup uses
 `.env.example` values.
 
+## Containerized Product Runtime
+
+Start PostgreSQL, apply the existing database migrations, and start the Fake-bank API and
+hosted checkout UI with:
+
+```sh
+docker compose -f docker/docker-compose.yml up --build
+```
+
+The product runtime is available at:
+
+- API: `http://127.0.0.1:8080`
+- Hosted checkout UI: `http://127.0.0.1:5173`
+- PostgreSQL: `127.0.0.1:55432`
+
+Compose waits for PostgreSQL readiness, runs migrations as a one-shot service, waits for
+the API healthcheck, and then starts the checkout UI. The checkout UI proxies `/v1`
+requests to the API over the internal Compose network.
+
+The Example Merchant is not part of this product runtime. The native `pnpm dev:services`
+command remains infrastructure-only and starts PostgreSQL for workspace development.
+
 ## Workspace Layout
 
 ```text

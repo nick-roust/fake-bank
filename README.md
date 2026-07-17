@@ -24,7 +24,17 @@ behavior.
 
 ## Quick Start
 
-Install dependencies:
+Start the complete Fake-bank product runtime in containers:
+
+```sh
+docker compose -f docker/docker-compose.yml up --build
+```
+
+This starts PostgreSQL, applies migrations, and then starts the API and Hosted Checkout UI.
+The Example Merchant is not included. Open the API at `http://127.0.0.1:8080` and hosted
+checkout pages at `http://127.0.0.1:5173`.
+
+For native workspace development, install dependencies:
 
 ```sh
 pnpm install
