@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "pnpm db:migrate && pnpm -r --parallel --if-present dev",
     "dev:services": "docker compose --env-file .env.example -f docker/docker-compose.yml up -d postgres",
-    "dev:services:down": "docker compose --env-file .env.example -f docker/docker-compose.yml down",
+    "dev:services:down": "docker compose --env-file .env.example -f docker/docker-compose.yml down postgres",
     "db:migrate": "pnpm --filter @fake-bank/api db:migrate",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
