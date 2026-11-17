@@ -5,20 +5,6 @@
 # Dockerfiles are build-control inputs; all other non-allowlisted files stay excluded.
 **
 
-# Traverse only required directories.
-!apps/
-!db/
-!docker/
-!apps/api/
-!apps/checkout-ui/
-!db/migrations/
-!apps/api/scripts/
-!apps/api/src/
-!apps/checkout-ui/src/
-!apps/api/src/payments/
-!apps/api/src/scenarios/
-!apps/api/src/server/
-!apps/api/src/webhooks/
 
 # Explicit application and dependency-definition inputs.
 !apps/api/package.json
