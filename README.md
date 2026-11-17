@@ -19,6 +19,15 @@ payment scenarios, and webhook notifications in a controlled environment.
 - **Docker Compose** — Run the API, Checkout, and PostgreSQL together.
 - **Example Merchant** — Explore a reference integration with the API and webhooks.
 
+## Checkout Preview
+
+Payment form and completed test payment in the local Checkout interface (mobile viewport).
+
+<p>
+  <img src="docs/images/checkout-created.png" alt="FakeBank Checkout payment form with Created status" width="320">
+  <img src="docs/images/checkout-succeeded.png" alt="FakeBank Checkout showing Payment completed and Succeeded status" width="320">
+</p>
+
 ## Quick Start — Docker
 
 From a source checkout, build and start the existing local runtime:
