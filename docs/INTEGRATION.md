@@ -1,11 +1,11 @@
 # Reference Merchant Integration
 
 This document describes the minimal merchant example in `examples/merchant`.
-The example demonstrates Fake-bank as an external payment provider through the public API,
+The example demonstrates FakeBank as an external payment provider through the public API,
 hosted checkout URL, and webhook delivery.
 
-The example merchant is a demonstration client only. It is not part of the Fake-bank domain
-model and does not add merchant business logic to Fake-bank.
+The example merchant is a demonstration client only. It is not part of the FakeBank domain
+model and does not add merchant business logic to FakeBank.
 
 ## Integration Flow
 
@@ -14,7 +14,7 @@ Example Merchant
     |
     | POST /v1/payments
     v
-Fake-bank API
+FakeBank API
     |
     | checkout_url
     v
@@ -22,7 +22,7 @@ Buyer Checkout
     |
     | confirm test card payment
     v
-Fake-bank Payment Lifecycle
+FakeBank Payment Lifecycle
     |
     | payment webhook
     v
@@ -54,7 +54,7 @@ Apply database migrations:
 pnpm db:migrate
 ```
 
-Start the Fake-bank API:
+Start the FakeBank API:
 
 ```sh
 pnpm --filter @fake-bank/api dev
@@ -74,7 +74,7 @@ pnpm --filter @fake-bank/example-merchant dev
 
 Default URLs:
 
-- Fake-bank API: `http://127.0.0.1:8080`
+- FakeBank API: `http://127.0.0.1:8080`
 - Hosted checkout UI: `http://127.0.0.1:5173`
 - Example merchant: `http://127.0.0.1:8090`
 - Merchant webhook endpoint: `http://127.0.0.1:8090/webhooks/fake-bank`
@@ -86,7 +86,7 @@ The example merchant uses these environment variables:
 - `MERCHANT_HOST`: HTTP host. Default: `127.0.0.1`.
 - `MERCHANT_PORT`: HTTP port. Default: `8090`.
 - `MERCHANT_PUBLIC_BASE_URL`: public merchant URL used for webhook URLs. Default: `http://127.0.0.1:8090`.
-- `FAKE_BANK_BASE_URL`: Fake-bank API base URL. Default: `http://127.0.0.1:8080`.
+- `FAKE_BANK_BASE_URL`: FakeBank API base URL. Default: `http://127.0.0.1:8080`.
 
 ## Create Payment Request
 
@@ -139,7 +139,7 @@ Test cards:
 
 ## Webhook Handling
 
-Fake-bank sends payment lifecycle webhooks to the merchant webhook URL.
+FakeBank sends payment lifecycle webhooks to the merchant webhook URL.
 
 Example webhook payload:
 
@@ -195,6 +195,25 @@ Run the example merchant smoke test:
 pnpm --filter @fake-bank/example-merchant test
 ```
 
-The smoke test starts the merchant against a local Fake-bank API stub, creates a payment,
+The smoke test starts the merchant against a local FakeBank API stub, creates a payment,
 checks that the checkout URL is displayed, sends a webhook payload, and verifies that the
 merchant displays the final payment result.
+
+## Webhook trust, delivery and result handling
+
+The wire payload is defined only in [OpenAPI](../openapi/openapi.yaml).
+Callbacks are unsigned. Treat them as controlled simulator traffic, not authenticated
+bank messages. Accept expected event types and validate payment identity, amount,
+currency and merchant context; deduplicate compatible events by event identity.
+
+Terminal success/failure sends one notification by default; `duplicate_webhook`
+sends the same event three times. Delivery attempts are persisted as pending,
+delivered or failed; there is no public delivery-attempt query endpoint or durable
+retry worker. HTTP 2xx marks delivered; non-2xx/network errors mark failed. There is
+no explicit outbound request deadline. Confirmation awaits terminal delivery, so a
+slow receiver can delay the confirmation response. Return navigation is not proof
+of payment; use payment readback and expected events.
+
+The merchant example selects an explicit scenario. That scenario takes precedence
+over the supported test-card outcome. Its smoke test uses a provider stub and a
+manually sent callback; it is not a standalone Docker E2E test.

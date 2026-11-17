@@ -1,0 +1,27 @@
+FakeBank 0.2.0 — Base Component Source Availability
+
+Matching source companion: fake-bank-0.2.0-base-sources.tar.gz
+SHA-256: 13b23bca9eb94bfb9f35e19065ea96c90a4de0cbfc0fc77d0981275e6a07baa8
+
+The source companion is a separate release download, not a runtime dependency.
+Obtain it from the same version's release/download location as the application
+images. FakeBank release index: https://github.com/nick-roust/fake-bank/releases
+The exact filename and checksum above identify the required source material.
+
+It includes complete upstream inputs and Alpine recipes/patches/configuration/
+install scripts for the 21 source-origin/revision combinations recorded in its
+SOURCE-MANIFEST.json. Covered GPL/LGPL/MPL components retain their original rights,
+licences and applicable additional permissions. See BASE_LICENSES.txt and the
+artifact-specific API_BASE_NOTICES.txt or CHECKOUT_BASE_NOTICES.txt alongside this
+file. LGPL libraries use standard replaceable shared-library linking; no added
+restriction on modification, debugging or reverse engineering is imposed here.
+
+Binary redistribution is conditional on providing the matching sources and notices
+with equivalent recipient access. Do not distribute a candidate if the matching
+source download is missing. Source access must be verified before public binary redistribution; local
+preparation is not proof of public availability.
+This is not a long-term written source offer. It does not require a source build
+to run FakeBank, change FakeBank's Apache-2.0 licence, or impose a new EULA.
+
+The PostgreSQL image is pulled independently by Compose and is not embedded in
+these application images. Mirroring/repackaging it requires a separate review.

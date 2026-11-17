@@ -29,5 +29,6 @@
     "checkout",
     "webhooks",
     "openapi"
-  ]
+  ],
+  "author": "Nick Roust"
 }

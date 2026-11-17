@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.2.0] - Unreleased
 
+- Clarify Nick Roust authorship and Apache-2.0 metadata; include third-party notices.
+- Correct README/developer documentation and two OpenAPI documentation discrepancies.
+
 ### Added
 
 - Single-instance, linux/amd64 image-only Compose candidate for approved GHCR packages.

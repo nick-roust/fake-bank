@@ -10,5 +10,7 @@
   },
   "devDependencies": {
     "typescript": "^5.9.3"
-  }
+  },
+  "author": "Nick Roust",
+  "license": "Apache-2.0"
 }

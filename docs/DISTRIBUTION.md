@@ -147,12 +147,20 @@ establish restart/crash recovery. Checkout does not automatically poll delayed o
 reload or GET to observe them. No hosted uptime, production security, multi-instance,
 backup, crash recovery or universal idempotency guarantee is made.
 
-The 2026-11-17 SLY verification of source 8d4e828 reused existing local images:
-all six scenario outcomes, one real browser success, fresh/repeated migrations,
-stop/start and database record persistence across recreation passed. Five scenario
-confirmations used HTTP; timeout was observed for only five seconds. This is historical
-bounded evidence, not a test of newly built 0.2.0 artifacts or public distribution.
-Fresh build, anonymous pull and clean external-host walkthrough remain pending.
+The November 17, 2026 local candidate verification used an exact working-tree
+snapshot on base Git revision `57cb46f90610cbb47abab04f1258e1f930fca05c`, after the
+earlier baseline verification. The minimized API and approved branded Checkout
+passed six scenario outcomes, one browser success, fresh/repeated migrations,
+stop/start and retained payment records after container recreation. A new control
+payment succeeded after recreation. The timeout observation was five seconds.
+This is local candidate evidence, not registry/anonymous-pull or external-host proof.
+License/documentation packaging changes require a new artifact-content check;
+source labels alone do not establish correspondence.
+
+For a source-build alternative before image publication, run
+`docker compose -f docker/docker-compose.yml up --build -d --wait` from a checkout.
+This builds development tags and requires no host Node.js/pnpm. It is separate from
+the image-only commands above; do not run both on the same default ports.
 
 ## Separately approved build/publication procedure
 
@@ -228,3 +236,13 @@ identities and pass/fail without publishing sensitive findings. Recheck the full
 context including ignored/untracked files and symlinks at the actual build revision;
 new allowlist entries need explicit review. This source-level preparation does not
 claim image/layer, dependency, browser-bundle or final-archive content verification.
+
+## Licensing gate
+
+[Third-Party Notices](../THIRD_PARTY_NOTICES.md) accompanies the root LICENSE in
+both application images at `/usr/share/licenses/fake-bank/`. Preserve all inherited
+base/dependency notices. The curated archive includes both files and the OpenAPI
+contract. Review exact base package licenses and fulfil applicable source-delivery
+obligations before public redistribution; links and SPDX metadata alone do not
+close this gate. No source offer or licensing acceptance is implied by a passing
+runtime test. A changed base identity requires a refreshed inventory.

@@ -14,19 +14,25 @@ ENV PATH=$PNPM_HOME:$PATH
 RUN mkdir -p "$COREPACK_HOME" \
     && corepack enable \
     && corepack prepare pnpm@11.0.9 --activate \
-    && chmod -R a+rX "$COREPACK_HOME"
+    && chmod -R a+rX "$COREPACK_HOME" \
+    && rm -rf /root/.cache/pnpm /root/.npm /tmp/node-compile-cache
 
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/package.json
 
-RUN pnpm install --frozen-lockfile --filter @fake-bank/api...
+RUN pnpm install --prod --frozen-lockfile --filter @fake-bank/api... --store-dir /tmp/fake-bank-pnpm-store \
+    && rm -rf /tmp/fake-bank-pnpm-store /root/.cache/pnpm /root/.npm /tmp/node-compile-cache
 
 COPY apps/api apps/api
 COPY db db
 
 COPY LICENSE /usr/share/licenses/fake-bank/LICENSE
+COPY THIRD_PARTY_NOTICES.md /usr/share/licenses/fake-bank/THIRD_PARTY_NOTICES.md
+COPY licenses/BASE_LICENSES.txt /usr/share/licenses/fake-bank/licenses/BASE_LICENSES.txt
+COPY licenses/API_BASE_NOTICES.txt /usr/share/licenses/fake-bank/licenses/API_BASE_NOTICES.txt
+COPY licenses/SOURCE_AVAILABILITY.txt /usr/share/licenses/fake-bank/licenses/SOURCE_AVAILABILITY.txt
 
 USER node
 

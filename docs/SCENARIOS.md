@@ -1,6 +1,6 @@
 # Payment Scenarios
 
-Fake-bank scenarios define deterministic simulator behavior for provider-side payment tests.
+FakeBank scenarios define deterministic simulator behavior for provider-side payment tests.
 They describe the simulated outcome, webhook behavior, and timing behavior for a payment.
 
 Scenarios control simulated provider behavior only. They do not replace payment lifecycle
@@ -18,7 +18,7 @@ Each scenario has:
 - `webhook_effect`: expected webhook delivery behavior.
 - `timing_behavior`: immediate, delayed, or no terminal result.
 
-Scenario outcomes are deterministic. Fake-bank does not use random behavior to decide
+Scenario outcomes are deterministic. FakeBank does not use random behavior to decide
 payment results.
 
 ## Scenario Catalog
@@ -140,3 +140,21 @@ Timing behavior: no terminal result.
 - Scenario execution state remains owned by the scenario engine.
 - Webhook generation and delivery remain owned by the webhook engine.
 - Merchant systems own webhook processing and merchant-side state.
+
+## Selection and operational limits
+
+Supply `scenario` when creating the payment. Without it, `4242424242424242`
+selects success and `4000000000000002` selects decline. An explicit scenario wins
+only after supported-card validation; an unsupported number returns HTTP 400.
+Expiry such as `12/30` and CVV such as `123` are format-only test inputs.
+
+`provider_error` confirmation returns HTTP 500 while the payment remains pending.
+`timeout` is a simulated pending outcome, not a deliberately stalled HTTP response.
+The duplicate scenario sends three attempts with the same event ID and payload;
+it is not a durable retry policy. Non-2xx delivery does not roll back payment state.
+
+Deterministic means predefined outcome rules, not identical IDs, timestamps or
+wall-clock timing. The 30-second delay uses a process-local timer with no startup
+recovery. Checkout does not poll; reload or GET to observe delayed completion.
+The local candidate verification covered all six scenarios; the timeout observation
+was bounded to five seconds and does not prove indefinite behavior.

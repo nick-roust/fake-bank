@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
-  title: Fake-bank API
+  title: FakeBank API
   summary: Payment provider simulator API.
   description: >
-    Fake-bank exposes a deterministic payment provider simulator API for
+    FakeBank exposes a deterministic payment provider simulator API for
     developer integrations, hosted checkout testing, and webhook lifecycle
     simulation.
   version: 0.2.0
@@ -28,7 +28,7 @@ webhooks:
         - Webhooks
       summary: Receive a payment lifecycle webhook
       description: >
-        Webhook payload delivered by Fake-bank to the merchant webhook URL
+        Webhook payload delivered by FakeBank to the merchant webhook URL
         configured when the payment is created.
       operationId: receivePaymentWebhook
       requestBody:
@@ -146,6 +146,8 @@ paths:
                     scenario: card_success
                     created_at: "2026-07-07T12:00:00Z"
                     updated_at: "2026-07-07T12:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -287,7 +289,7 @@ components:
       example: event_000001
     RequestId:
       type: string
-      pattern: "^req_[A-Za-z0-9]+$"
+      description: Generated request ID, or the nonempty x-request-id supplied by the caller.
       example: req_000001
     PaymentStatus:
       type: string

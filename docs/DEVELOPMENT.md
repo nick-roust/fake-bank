@@ -3,7 +3,7 @@
 ## Requirements
 
 - Node.js 24 or later
-- pnpm 11 or later
+- pnpm 11.0.9
 - Docker with Docker Compose
 
 ## Runtime Stack
@@ -38,7 +38,7 @@ Tooling:
 Install dependencies:
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 Start local infrastructure services:
@@ -60,12 +60,14 @@ Stop local infrastructure services:
 pnpm dev:services:down
 ```
 
-Optional local environment overrides can be placed in `.env`. The default local setup uses
-`.env.example` values.
+The database helper explicitly uses `.env.example`; API and merchant native commands
+do not automatically load `.env`. Their defaults match the example values. Export
+any overrides before starting those processes. Vite loads its own environment files
+for Checkout; do not assume that also configures the API or merchant.
 
 ## Containerized Product Runtime
 
-Start PostgreSQL, apply the existing database migrations, and start the Fake-bank API and
+Start PostgreSQL, apply the existing database migrations, and start the FakeBank API and
 hosted checkout UI with:
 
 ```sh
@@ -106,7 +108,7 @@ packages/
 
 `examples/merchant` contains the reference merchant integration example.
 
-`packages/shared` contains shared TypeScript contracts and utilities for Fake-bank workspaces.
+`packages/shared` contains shared TypeScript contracts and utilities for FakeBank workspaces.
 
 `packages/openapi` contains OpenAPI-related workspace tooling.
 
@@ -250,8 +252,10 @@ pnpm test
 
 Local environment variables are defined in `.env.example`.
 
-The default `pnpm dev:services` command uses `.env.example`. Copy `.env.example` to
-`.env` only when local overrides are needed. The `.env` file is intentionally ignored by Git.
+The default `pnpm dev:services` command explicitly uses `.env.example`. For custom
+values, pass an explicit environment file to Compose and export matching native
+process variables. Copying a file to `.env` alone does not configure native API
+or merchant processes. Local populated environment files must remain untracked.
 
 PostgreSQL variables:
 
@@ -279,3 +283,12 @@ Use conventional commits for repository changes.
 ## Documentation Rules
 
 All documentation in this repository must be written in English.
+
+## Documentation navigation
+
+- [Distribution](DISTRIBUTION.md): image-only runtime and lifecycle.
+- [Domain](DOMAIN.md): payment states and test cards.
+- [Scenarios](SCENARIOS.md): selected outcomes and timing limits.
+- [Integration](INTEGRATION.md): merchant and webhook handling.
+- [Persistence](PERSISTENCE.md): schema and migrations.
+- [API contract](../openapi/openapi.yaml): request/response schemas.

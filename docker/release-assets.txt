@@ -10,3 +10,13 @@ docker/release-assets.txt
 docs/INTEGRATION.md
 docs/SCENARIOS.md
 brand/fake-terminal-mark.svg
+THIRD_PARTY_NOTICES.md
+openapi/openapi.yaml
+licenses/BASE_LICENSES.txt
+docs/ARCHITECTURE.md
+docs/DEVELOPMENT.md
+docs/DOMAIN.md
+docs/PERSISTENCE.md
+licenses/API_BASE_NOTICES.txt
+licenses/CHECKOUT_BASE_NOTICES.txt
+licenses/SOURCE_AVAILABILITY.txt

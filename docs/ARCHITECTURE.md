@@ -2,13 +2,15 @@
 
 ## Project Positioning
 
-Fake-bank is an independent open-source payment provider simulator. It is designed to behave like an external payment provider from the perspective of a merchant integration, while remaining safe, local, deterministic, and free from real financial processing.
+FakeBank is an independent open-source payment provider simulator. It behaves like
+an external payment provider for local integration testing. It does not process
+real card payments, move funds, or connect to banking or acquiring networks.
 
-The project must stay provider-neutral and integration-neutral. Its architecture describes Fake-bank as a standalone product, not as an adapter, plugin, or companion for any external system.
+The project must stay provider-neutral and integration-neutral. Its architecture describes FakeBank as a standalone product, not as an adapter, plugin, or companion for any external system.
 
 ## Purpose
 
-Fake-bank exists to give developers a realistic payment provider boundary without requiring access to a real acquiring service. It provides the behavior that payment integrations usually depend on:
+FakeBank exists to give developers a realistic payment provider boundary without requiring access to a real acquiring service. It provides the behavior that payment integrations usually depend on:
 
 - payment creation through an API
 - hosted buyer checkout
@@ -41,18 +43,18 @@ The goal is not to mock an internal function call. The goal is to simulate the e
 - Contract-first: public API behavior is defined before implementation behavior.
 - Deterministic by default: the same scenario should produce the same observable result.
 - Explicit scenarios: payment outcomes must be selected through named scenarios, not hidden random behavior.
-- External boundary realism: Fake-bank should look and feel like a separate payment provider to its consumers.
+- External boundary realism: FakeBank should look and feel like a separate payment provider to its consumers.
 - Minimal product surface: the first architecture supports payment simulation, not a full financial back office.
 - Documentation-first behavior: supported flows, scenarios, and limitations must be visible in project documentation.
 
 ## System Boundary
 
-Fake-bank owns the payment provider simulator boundary. Inside that boundary it manages payment records, checkout state, scenario execution, and webhook delivery attempts.
+FakeBank owns the payment provider simulator boundary. Inside that boundary it manages payment records, checkout state, scenario execution, and webhook delivery attempts.
 
-Systems outside the boundary are treated as merchant systems or buyer browsers. Fake-bank does not own merchant business logic, buyer identity, inventory, fulfillment, tax, accounting, or settlement.
+Systems outside the boundary are treated as merchant systems or buyer browsers. FakeBank does not own merchant business logic, buyer identity, inventory, fulfillment, tax, accounting, or settlement.
 
 ```text
-Outside Fake-bank                         Inside Fake-bank
+Outside FakeBank                         Inside FakeBank
 
 Merchant application  ----------------->  Payment API
 Buyer browser         ----------------->  Hosted Checkout
@@ -61,7 +63,7 @@ Merchant webhook URL  <-----------------  Webhook Engine
 
 ## Component Model
 
-Fake-bank is composed of five architectural components. The components describe responsibilities and boundaries only; they do not prescribe a runtime, framework, database, or deployment topology.
+FakeBank is composed of five architectural components. The components describe responsibilities and boundaries only; they do not prescribe a runtime, framework, database, or deployment topology.
 
 ### API Service
 
@@ -71,7 +73,7 @@ The API service validates request shape against the public contract and returns 
 
 ### Checkout UI
 
-The checkout UI provides the hosted buyer-facing payment page. It displays payment details, accepts test card input, submits confirmation to Fake-bank, and presents the resulting payment state to the buyer.
+The checkout UI provides the hosted buyer-facing payment page. It displays payment details, accepts test card input, submits confirmation to FakeBank, and presents the resulting payment state to the buyer.
 
 The checkout UI is part of the provider simulator, not an optional demo shell. It is required because hosted checkout is a core part of the external payment provider flow.
 
@@ -105,13 +107,13 @@ lifecycle events, scenario execution state, and webhook delivery attempts.
 
 The expected external flow is:
 
-1. A merchant creates a payment through the Fake-bank API.
-2. Fake-bank returns a payment identifier and hosted checkout URL.
+1. A merchant creates a payment through the FakeBank API.
+2. FakeBank returns a payment identifier and hosted checkout URL.
 3. The buyer opens the hosted checkout page.
 4. The buyer enters a supported test card.
-5. Fake-bank confirms the payment and applies the selected scenario.
-6. Fake-bank updates payment state.
-7. Fake-bank delivers webhook events to the merchant webhook URL.
+5. FakeBank confirms the payment and applies the selected scenario.
+6. FakeBank updates payment state.
+7. FakeBank delivers webhook events to the merchant webhook URL.
 8. The merchant handles the webhook and updates its own state.
 
 ```text
@@ -119,7 +121,7 @@ Merchant
     |
     | create payment
     v
-Fake-bank API
+FakeBank API
     |
     | checkout URL
     v
@@ -175,7 +177,7 @@ Webhook payloads are also public contracts. They must remain stable, documented,
 
 ## Non-goals
 
-Fake-bank does not provide:
+FakeBank does not provide:
 
 - Real banking
 - Real acquiring
@@ -196,3 +198,11 @@ Fake-bank does not provide:
 - Real exchange-rate or multi-currency business logic
 - A merchant dashboard
 - Production observability guarantees
+
+## Implementation limits for the current release
+
+Deterministic refers to scenario outcome selection; identifiers, timestamps and real
+execution timing vary. Asynchronous notification from a merchant perspective does
+not mean a detached durable worker: terminal confirmation awaits webhook delivery.
+There is no signing, durable retry or restoration of delayed timers after restart.
+See [SCENARIOS.md](SCENARIOS.md) and [INTEGRATION.md](INTEGRATION.md) for these limits.

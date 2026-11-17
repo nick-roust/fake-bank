@@ -1,182 +1,101 @@
 <p><img src="brand/fake-terminal-mark.svg" width="96" height="96" alt="FakeBank Terminal Mark"></p>
 
-# Fake-bank
+# FakeBank
 
-Open-source payment provider simulator with API, hosted checkout, webhook delivery,
-deterministic scenarios, and a reference merchant integration.
+**An open-source card payment provider simulator for integration testing.**
 
-## Purpose
+FakeBank lets developers test payment flows locally without connecting to a real
+acquiring service. It combines a Payment API, a checkout interface, predefined
+payment scenarios, and webhook notifications in a controlled environment.
 
-Fake-bank provides a local payment provider experience for developers who need to test
-payment integrations without using a real acquiring service. It exposes a payment API,
-a hosted checkout page, card simulation, webhook delivery, and scenario-based payment
-behavior.
+## Features
 
-## What Is Included
+- **Payment API** — Create payments, retrieve their status, and confirm test transactions.
+- **Checkout** — Complete simulated card payments through a browser interface.
+- **Payment scenarios** — Exercise successful, declined, delayed, timed-out,
+  duplicate-notification, and provider-error flows.
+- **Webhooks** — Receive payment outcome notifications; delivery attempts are stored in PostgreSQL.
+- **PostgreSQL** — Persist payment records and related state.
+- **Docker Compose** — Run the API, Checkout, and PostgreSQL together.
+- **Example Merchant** — Explore a reference integration with the API and webhooks.
 
-- Payment API defined by OpenAPI
-- Hosted card checkout page
-- Card test inputs for success and failure paths
-- Payment lifecycle tracking
-- Webhook delivery and delivery attempt tracking
-- Deterministic payment scenarios
-- PostgreSQL persistence
-- Docker Compose local database
-- Example merchant integration
+## Quick Start — Docker
 
-## Quick Start
-
-### Published-image distribution (0.2.0 preparation)
-
-Requires Docker Engine with Compose v2 on Linux amd64, a browser, and an external
-HTTP webhook receiver reachable from the API container. Runtime needs no host Node.js
-or pnpm. Image publication, exact manifest digests and anonymous pulls are **not yet
-verified**; this is not an available-image or release-completion claim.
-
-Follow [the distribution walkthrough](docs/DISTRIBUTION.md) after the separate release
-approval and digest-lock step. The image-only candidate is
-`docker/docker-compose.release.yml`; the required-digest override is
-`docker/docker-compose.release.lock.yml`. Version tags alone are mutable.
-
-### Existing source build
-
-From this checkout, build the existing development runtime:
+From a source checkout, build and start the existing local runtime:
 
 ```sh
-docker compose -f docker/docker-compose.yml up --build
+docker compose -f docker/docker-compose.yml up --build -d --wait
 ```
 
-This requires source and build-time network access, but no host Node.js/pnpm.
-It starts PostgreSQL, migrations, API and Checkout; Example Merchant is excluded.
-Do not run it alongside a distribution instance using the same ports. This command
-builds the development `:local` tags; it is separate from published-image distribution.
+Requires Docker with Compose v2, build-time network access, and a browser. No host
+Node.js or pnpm installation is needed. Use free local ports 8080, 5173 and 55432.
+The command builds development `:local` images; it does not pull a published 0.2.0
+application image. PostgreSQL, migrations, API and Checkout start together.
+Example Merchant is a separate native-development example, not a Compose service.
 
-### Native workspace development
+Published-image distribution is not yet available as a verified release. The
+[distribution instructions](docs/DISTRIBUTION.md) describe the image-only candidate,
+digest lock and remaining registry verification. Do not substitute unverified image
+references or infer publication from version strings.
 
-For native workspace development, install dependencies:
+## First Test Payment
 
-```sh
-pnpm install
-```
+Use an existing JSON webhook receiver reachable from the API container. Its address
+is different from the browser return address; container localhost is not host
+localhost. See the [full setup and first-payment walkthrough](docs/DISTRIBUTION.md#payment-walkthrough)
+for webhook receiver requirements, URL configuration, payment creation, Checkout
+confirmation, result readback, and webhook verification. It requires an existing
+receiver; no receiver service is bundled with FakeBank.
 
-Start PostgreSQL:
+Create a `card_success` payment, open the exact returned `checkout_url`, and enter
+card `4242424242424242`, expiry `12/30`, CVV `123`. After Pay, expect Succeeded,
+a `succeeded` payment readback, and a matching `payment.succeeded` event at your
+receiver. For decline, select `card_declined` with `4000000000000002`.
 
-```sh
-pnpm dev:services
-```
+Use test inputs only. FakeBank does not move real funds or connect to banking rails.
 
-Start the API, checkout UI, and example merchant:
+## Documentation
 
-```sh
-pnpm dev
-```
-
-Open the example merchant:
-
-```text
-http://127.0.0.1:8090
-```
-
-Create a payment, open the hosted checkout URL, and use a test card:
-
-- Success: `4242424242424242`
-- Failure: `4000000000000002`
-
-Stop PostgreSQL:
-
-```sh
-pnpm dev:services:down
-```
-
-## Default Local URLs
-
-- API: `http://localhost:8080`
-- Hosted checkout UI: `http://localhost:5173`
-- Example merchant: `http://127.0.0.1:8090`
-
-## API Example
-
-For container use, follow the complete [create/read/Checkout/result walkthrough](docs/DISTRIBUTION.md#payment-walkthrough).
-It requires an external receiver and explains why a container webhook cannot use the
-host browser's loopback address. The [Example Merchant integration](docs/INTEGRATION.md)
-is the native-development alternative.
-
-## Scenarios
-
-Fake-bank 0.2.0 preserves these existing scenarios:
-
-- `card_success`
-- `card_declined`
-- `delayed_success`
-- `timeout`
-- `duplicate_webhook`
-- `provider_error`
-
-See [docs/SCENARIOS.md](docs/SCENARIOS.md).
-
-## Repository Layout
-
-```text
-fake-bank/
-├── apps/
-│   ├── api/
-│   └── checkout-ui/
-├── db/
-│   └── migrations/
-├── docker/
-│   └── docker-compose.yml
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── DEVELOPMENT.md
-│   ├── DOMAIN.md
-│   ├── INTEGRATION.md
-│   ├── PERSISTENCE.md
-│   └── SCENARIOS.md
-├── examples/
-│   └── merchant/
-├── openapi/
-│   └── openapi.yaml
-├── packages/
-│   ├── openapi/
-│   └── shared/
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── package.json
-└── pnpm-workspace.yaml
-```
+- [Development](docs/DEVELOPMENT.md) — Native setup, workspace tools and validation.
+- [API Reference — OpenAPI](openapi/openapi.yaml) — The single API contract.
+- [Integration](docs/INTEGRATION.md) — Example Merchant, Docker addressing and webhooks.
+- [Scenarios](docs/SCENARIOS.md) — Six predefined outcomes and timing behavior.
+- [Domain](docs/DOMAIN.md) — Payment lifecycle and test-card semantics.
+- [Persistence](docs/PERSISTENCE.md) — PostgreSQL schema and migrations.
+- [Architecture](docs/ARCHITECTURE.md) — Product boundaries and component ownership.
+- [Distribution](docs/DISTRIBUTION.md) — Image-only configuration and lifecycle.
+- [0.2.0 release notes](docs/RELEASE_NOTES_v0.2.0.md) — Candidate scope and open gates.
+- [Changelog](CHANGELOG.md) — Version history.
 
 ## Validation
 
-Run the full quality check:
+With Node.js 24 and pnpm 11.0.9 installed:
 
 ```sh
+pnpm install --frozen-lockfile
 pnpm validate
 ```
 
-This validates the OpenAPI contract, database migrations, TypeScript projects, tests,
-the example merchant smoke test, and the checkout build.
+Validation covers contract/migration checks, typechecks, API tests, the stub-based
+merchant smoke test, and Checkout build. Placeholder workspace test scripts do not
+provide browser or PostgreSQL integration coverage.
 
-## Project Rules
+## Limitations
 
-Fake-bank is a standalone open-source project. Its code, package names, API contract,
-documentation, examples, and Docker configuration describe Fake-bank only as an
-independent payment provider simulator.
+Callbacks are unsigned and have no durable retry worker. Payment creation has no
+Idempotency-Key replay contract. Delayed timers are process-local and are not
+restored after restart; Checkout does not automatically poll delayed results.
+This release targets one local instance. Hosted Demo, multi-instance support,
+production payment security, real acquiring and settlement are outside its scope.
 
-All project documentation is written in English.
+## Author & License
 
-## Non-goals
+FakeBank was created and is maintained by Nick Roust.
 
-- Real banking
-- Real acquiring
-- Real card processing
-- PCI compliance
-- Authentication and merchant onboarding
-- Refunds
-- Payouts
-- Settlement
-- Multi-currency business logic
+Copyright © 2026 Nick Roust.
 
-## License
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 
-Apache License 2.0. See [LICENSE](LICENSE).
+Third-party components are distributed under their respective licenses. See
+[Third-Party Notices](THIRD_PARTY_NOTICES.md) for applicable copyright and license
+information.

@@ -113,7 +113,7 @@ function App() {
       <section className="checkout-panel" aria-labelledby="checkout-title">
         <div className="brand">
           <img className="brand-mark" src={terminalMarkUrl} width="48" height="48" alt="" aria-hidden="true" />
-          <span>Fake-bank</span>
+          <span>FakeBank</span>
         </div>
         <h1 id="checkout-title">Payment</h1>
 
@@ -127,6 +127,7 @@ function App() {
 
         {payment ? (
           <>
+            {payment.status !== 'succeeded' ? (
             <dl className="payment-summary">
               <div>
                 <dt>Merchant</dt>
@@ -145,6 +146,7 @@ function App() {
                 </dd>
               </div>
             </dl>
+            ) : null}
 
             <PaymentState payment={payment} amountText={amountText} isSubmitting={isSubmitting} />
 
@@ -224,7 +226,6 @@ function SuccessResult(props: { payment: Payment; amountText: string }) {
       <StatusBlock
         tone="success"
         title="Payment completed"
-        detail="Your payment was confirmed successfully."
       />
       <dl className="result-summary" aria-label="Payment confirmation summary">
         <div>
@@ -238,6 +239,14 @@ function SuccessResult(props: { payment: Payment; amountText: string }) {
         <div>
           <dt>Amount</dt>
           <dd>{props.amountText}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <span className={`status-pill status-${props.payment.status}`}>
+              {formatStatus(props.payment.status)}
+            </span>
+          </dd>
         </div>
       </dl>
       <a className="return-button" href={props.payment.return_url}>

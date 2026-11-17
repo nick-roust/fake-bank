@@ -33,5 +33,9 @@ COPY docker/checkout-ui.nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/checkout-ui/dist /usr/share/nginx/html
 
 COPY LICENSE /usr/share/licenses/fake-bank/LICENSE
+COPY THIRD_PARTY_NOTICES.md /usr/share/licenses/fake-bank/THIRD_PARTY_NOTICES.md
+COPY licenses/BASE_LICENSES.txt /usr/share/licenses/fake-bank/licenses/BASE_LICENSES.txt
+COPY licenses/CHECKOUT_BASE_NOTICES.txt /usr/share/licenses/fake-bank/licenses/CHECKOUT_BASE_NOTICES.txt
+COPY licenses/SOURCE_AVAILABILITY.txt /usr/share/licenses/fake-bank/licenses/SOURCE_AVAILABILITY.txt
 
 EXPOSE 5173

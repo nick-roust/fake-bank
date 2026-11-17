@@ -52,3 +52,8 @@
 !tsconfig.base.json
 !LICENSE
 !brand/fake-terminal-mark.svg
+!THIRD_PARTY_NOTICES.md
+!licenses/BASE_LICENSES.txt
+!licenses/API_BASE_NOTICES.txt
+!licenses/CHECKOUT_BASE_NOTICES.txt
+!licenses/SOURCE_AVAILABILITY.txt

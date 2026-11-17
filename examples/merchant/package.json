@@ -8,5 +8,7 @@
     "start": "node src/server.mjs",
     "test": "node test/smoke.mjs",
     "typecheck": "echo \"Example merchant typecheck is not required.\""
-  }
+  },
+  "author": "Nick Roust",
+  "license": "Apache-2.0"
 }

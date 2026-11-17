@@ -2,7 +2,10 @@
 
 ## Purpose
 
-This document defines the Fake-bank v0.1 persistence foundation. It maps the approved domain model to PostgreSQL tables and describes schema ownership, relationships, indexes, timestamps, and migration workflow.
+This document describes the PostgreSQL persistence layer used by the FakeBank
+0.2.0 release candidate. The foundation was introduced in v0.1 and is retained in
+the current implementation. The sections below describe the current tables, schema
+ownership, relationships, indexes, timestamps, and migration workflow.
 
 The persistence layer supports the payment API, hosted checkout confirmation flow,
 scenario execution state, lifecycle event history, and webhook delivery tracking.
@@ -28,7 +31,7 @@ Database migrations live in:
 db/migrations/
 ```
 
-The initial migration is:
+The first migration is:
 
 ```text
 db/migrations/0001_payment_persistence.sql
@@ -192,3 +195,13 @@ pnpm lint:migrations
 ```
 
 This validation checks migration naming, ordering, transaction boundaries, and required schema objects.
+
+## Current schema and recovery limits
+
+`0002_webhook_delivery_status_delivered.sql` renames the original webhook status
+`sent` to `delivered`. Both migrations are tracked in `schema_migrations`.
+Successful startup on a fresh database and repeated migration skips were tested
+locally with the 0.2.0 candidate. A retained named volume preserves payment records
+across graceful container recreation; this is not backup or crash-recovery proof.
+Persisted scenario rows do not restore process-local delayed timers after restart.
+For image-only startup and lifecycle commands, see [DISTRIBUTION.md](DISTRIBUTION.md).
