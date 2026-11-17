@@ -16,6 +16,7 @@ COPY apps/checkout-ui/package.json apps/checkout-ui/package.json
 RUN pnpm install --frozen-lockfile --filter @fake-bank/checkout-ui...
 
 COPY apps/checkout-ui apps/checkout-ui
+COPY brand/fake-terminal-mark.svg brand/fake-terminal-mark.svg
 
 RUN pnpm --filter @fake-bank/checkout-ui build
 

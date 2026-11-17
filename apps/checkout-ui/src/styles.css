@@ -40,11 +40,21 @@ input,
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 20px;
   color: #5f6b7a;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
+}
+
+.brand-mark {
+  display: block;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
 }
 
 h1 {

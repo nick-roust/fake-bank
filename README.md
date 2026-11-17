@@ -1,3 +1,5 @@
+<p><img src="brand/fake-terminal-mark.svg" width="96" height="96" alt="FakeBank Terminal Mark"></p>
+
 # Fake-bank
 
 Open-source payment provider simulator with API, hosted checkout, webhook delivery,

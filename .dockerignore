@@ -51,3 +51,4 @@
 !pnpm-workspace.yaml
 !tsconfig.base.json
 !LICENSE
+!brand/fake-terminal-mark.svg

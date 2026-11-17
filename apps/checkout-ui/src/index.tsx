@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import terminalMarkUrl from '../../../brand/fake-terminal-mark.svg';
 
 type PaymentStatus = 'created' | 'pending' | 'succeeded' | 'failed';
 
@@ -110,7 +111,10 @@ function App() {
   return (
     <main className="page-shell">
       <section className="checkout-panel" aria-labelledby="checkout-title">
-        <div className="brand">Fake-bank</div>
+        <div className="brand">
+          <img className="brand-mark" src={terminalMarkUrl} width="48" height="48" alt="" aria-hidden="true" />
+          <span>Fake-bank</span>
+        </div>
         <h1 id="checkout-title">Payment</h1>
 
         {loadState.kind === 'loading' ? (
