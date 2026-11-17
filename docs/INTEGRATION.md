@@ -29,6 +29,17 @@ Fake-bank Payment Lifecycle
 Example Merchant
 ```
 
+## Container addressing
+
+The setup below runs the API and Example Merchant natively on the same host.
+Its loopback webhook URLs do not work unchanged when the API is in a container:
+`127.0.0.1` then refers to the API container. The Example Merchant uses one
+`MERCHANT_PUBLIC_BASE_URL` for both browser return and webhook URLs, so that address
+must be reachable from both environments when using its form. Its state is in memory.
+For the image-only distribution, use the separately configured external receiver and
+explicit return/webhook addresses in [DISTRIBUTION.md](DISTRIBUTION.md); no new merchant
+service is bundled and no Example Merchant container UX is claimed.
+
 ## Local Setup
 
 Start the local infrastructure:

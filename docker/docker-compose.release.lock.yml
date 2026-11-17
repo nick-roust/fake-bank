@@ -1,0 +1,11 @@
+# Final immutable references: values must come from verified registry manifests.
+# This override intentionally fails interpolation until all digests are supplied.
+services:
+  postgres:
+    image: postgres:17-alpine@${POSTGRES_DIGEST:?Set verified PostgreSQL sha256 manifest digest}
+  migrate:
+    image: ghcr.io/nick-roust/fake-bank-api:0.2.0@${FAKE_BANK_API_DIGEST:?Set verified API sha256 manifest digest}
+  api:
+    image: ghcr.io/nick-roust/fake-bank-api:0.2.0@${FAKE_BANK_API_DIGEST:?Set verified API sha256 manifest digest}
+  checkout-ui:
+    image: ghcr.io/nick-roust/fake-bank-checkout-ui:0.2.0@${FAKE_BANK_CHECKOUT_DIGEST:?Set verified Checkout sha256 manifest digest}

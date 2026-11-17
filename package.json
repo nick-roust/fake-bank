@@ -1,6 +1,6 @@
 {
   "name": "fake-bank",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Open-source payment provider simulator with API, hosted checkout and webhook scenarios.",
   "license": "Apache-2.0",
   "private": true,

@@ -24,15 +24,32 @@ behavior.
 
 ## Quick Start
 
-Start the complete Fake-bank product runtime in containers:
+### Published-image distribution (0.2.0 preparation)
+
+Requires Docker Engine with Compose v2 on Linux amd64, a browser, and an external
+HTTP webhook receiver reachable from the API container. Runtime needs no host Node.js
+or pnpm. Image publication, exact manifest digests and anonymous pulls are **not yet
+verified**; this is not an available-image or release-completion claim.
+
+Follow [the distribution walkthrough](docs/DISTRIBUTION.md) after the separate release
+approval and digest-lock step. The image-only candidate is
+`docker/docker-compose.release.yml`; the required-digest override is
+`docker/docker-compose.release.lock.yml`. Version tags alone are mutable.
+
+### Existing source build
+
+From this checkout, build the existing development runtime:
 
 ```sh
 docker compose -f docker/docker-compose.yml up --build
 ```
 
-This starts PostgreSQL, applies migrations, and then starts the API and Hosted Checkout UI.
-The Example Merchant is not included. Open the API at `http://127.0.0.1:8080` and hosted
-checkout pages at `http://127.0.0.1:5173`.
+This requires source and build-time network access, but no host Node.js/pnpm.
+It starts PostgreSQL, migrations, API and Checkout; Example Merchant is excluded.
+Do not run it alongside a distribution instance using the same ports. This command
+builds the development `:local` tags; it is separate from published-image distribution.
+
+### Native workspace development
 
 For native workspace development, install dependencies:
 
@@ -77,28 +94,14 @@ pnpm dev:services:down
 
 ## API Example
 
-Create a payment:
-
-```sh
-curl -X POST http://localhost:8080/v1/payments \
-  -H 'content-type: application/json' \
-  -d '{
-    "merchant_id": "demo-shop",
-    "merchant_reference": "order_10001",
-    "amount": 199.99,
-    "currency": "EUR",
-    "payment_method": "card",
-    "return_url": "http://127.0.0.1:8090/",
-    "webhook_url": "http://127.0.0.1:8090/webhooks/fake-bank",
-    "scenario": "card_success"
-  }'
-```
-
-The response includes a `checkout_url` that opens the hosted payment page.
+For container use, follow the complete [create/read/Checkout/result walkthrough](docs/DISTRIBUTION.md#payment-walkthrough).
+It requires an external receiver and explains why a container webhook cannot use the
+host browser's loopback address. The [Example Merchant integration](docs/INTEGRATION.md)
+is the native-development alternative.
 
 ## Scenarios
 
-Fake-bank v0.1 supports:
+Fake-bank 0.2.0 preserves these existing scenarios:
 
 - `card_success`
 - `card_declined`

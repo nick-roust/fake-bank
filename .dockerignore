@@ -1,9 +1,67 @@
-.git
-.env
-.env.*
-!.env.example
-**/node_modules
-**/dist
-**/*.tsbuildinfo
-coverage
-*.log
+# Generic FakeBank application build context: deny everything by default.
+# Exact files only; new inputs require packaging review. Never include local state,
+# .env, credentials, observed payments, PG27/Deployment/Node/Platform artifacts,
+# databases, dumps, backups, volumes, logs, audit evidence or browser profiles.
+# Dockerfiles are build-control inputs; all other non-allowlisted files stay excluded.
+**
+
+# Traverse only required directories.
+!apps/
+!db/
+!docker/
+!apps/api/
+!apps/checkout-ui/
+!db/migrations/
+!apps/api/scripts/
+!apps/api/src/
+!apps/checkout-ui/src/
+!apps/api/src/payments/
+!apps/api/src/scenarios/
+!apps/api/src/server/
+!apps/api/src/webhooks/
+
+# Explicit application and dependency-definition inputs.
+!apps/api/package.json
+!apps/api/scripts/apply-migrations.mjs
+!apps/api/src/index.ts
+!apps/api/src/payments/card-simulation.ts
+!apps/api/src/payments/payment.lifecycle.ts
+!apps/api/src/payments/payment.repository.memory.ts
+!apps/api/src/payments/payment.repository.postgres.ts
+!apps/api/src/payments/payment.repository.ts
+!apps/api/src/payments/payment.routes.ts
+!apps/api/src/payments/payment.schemas.ts
+!apps/api/src/payments/payment.service.ts
+!apps/api/src/payments/payment.types.ts
+!apps/api/src/scenarios/scenario.catalog.ts
+!apps/api/src/scenarios/scenario.repository.memory.ts
+!apps/api/src/scenarios/scenario.repository.postgres.ts
+!apps/api/src/scenarios/scenario.repository.ts
+!apps/api/src/scenarios/scenario.service.ts
+!apps/api/src/scenarios/scenario.types.ts
+!apps/api/src/server/app.ts
+!apps/api/src/server/config.ts
+!apps/api/src/server/db.ts
+!apps/api/src/server/errors.ts
+!apps/api/src/webhooks/webhook.delivery.ts
+!apps/api/src/webhooks/webhook.repository.memory.ts
+!apps/api/src/webhooks/webhook.repository.postgres.ts
+!apps/api/src/webhooks/webhook.repository.ts
+!apps/api/src/webhooks/webhook.types.ts
+!apps/api/tsconfig.json
+!apps/checkout-ui/index.html
+!apps/checkout-ui/package.json
+!apps/checkout-ui/src/index.tsx
+!apps/checkout-ui/src/styles.css
+!apps/checkout-ui/tsconfig.json
+!apps/checkout-ui/vite.config.ts
+!db/migrations/0001_payment_persistence.sql
+!db/migrations/0002_webhook_delivery_status_delivered.sql
+!docker/Dockerfile.api
+!docker/Dockerfile.checkout-ui
+!docker/checkout-ui.nginx.conf
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.base.json
+!LICENSE

@@ -21,7 +21,16 @@ RUN pnpm --filter @fake-bank/checkout-ui build
 
 FROM nginx:1.29-alpine
 
+ARG VERSION=0.2.0
+ARG REVISION
+LABEL org.opencontainers.image.source="https://github.com/nick-roust/fake-bank" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
 COPY docker/checkout-ui.nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/checkout-ui/dist /usr/share/nginx/html
+
+COPY LICENSE /usr/share/licenses/fake-bank/LICENSE
 
 EXPOSE 5173

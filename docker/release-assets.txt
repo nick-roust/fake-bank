@@ -1,0 +1,11 @@
+LICENSE
+README.md
+CHANGELOG.md
+docker/docker-compose.release.yml
+docker/docker-compose.release.lock.yml
+docker/release.env.example
+docs/DISTRIBUTION.md
+docs/RELEASE_NOTES_v0.2.0.md
+docker/release-assets.txt
+docs/INTEGRATION.md
+docs/SCENARIOS.md
