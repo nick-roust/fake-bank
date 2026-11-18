@@ -32,8 +32,8 @@ Payment form and completed test payment in the local Checkout interface (mobile 
 
 **Published images:** The 0.2.0 API and Checkout images are public on GHCR and
 verified for Linux amd64, including anonymous pulls and an external-host payment
-flow. FakeBank 0.2.0 remains a Release Candidate; the official product Git tag and
-GitHub Release are pending.
+flow. FakeBank v0.2.0 was officially released on November 18, 2026. See the
+[GitHub Release v0.2.0](https://github.com/nick-roust/fake-bank/releases/tag/v0.2.0).
 
 Follow [published-image installation](docs/DISTRIBUTION.md#install-published-images)
 to obtain the Compose files and create `.env.release` with the verified digests.
@@ -87,7 +87,7 @@ Use test inputs only. FakeBank does not move real funds or connect to banking ra
 - [Persistence](docs/PERSISTENCE.md) — PostgreSQL schema and migrations.
 - [Architecture](docs/ARCHITECTURE.md) — Product boundaries and component ownership.
 - [Distribution](docs/DISTRIBUTION.md) — Image-only configuration and lifecycle.
-- [0.2.0 release notes](docs/RELEASE_NOTES_v0.2.0.md) — Candidate scope and completed technical verification.
+- [0.2.0 release notes](docs/RELEASE_NOTES_v0.2.0.md) — Release scope and completed technical verification.
 - [Changelog](CHANGELOG.md) — Version history.
 
 ## Validation

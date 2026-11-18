@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning.
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-11-18
 
 - Clarify Nick Roust authorship and Apache-2.0 metadata; include third-party notices.
 - Correct README/developer documentation and two OpenAPI documentation discrepancies.
@@ -31,9 +31,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Two synthetic successful payments with matching webhook HTTP 200; stop/start
   preserves payment data and migration records. G4 did not repeat all six scenarios.
 
-The Docker images are published and verified. FakeBank 0.2.0 remains a Release
-Candidate / Unreleased until the official product release is authorized. No
-byte-reproducible build, crash recovery, Hosted Demo or multi-instance claim is added.
+The Docker images are published and verified. FakeBank v0.2.0 was officially
+released on November 18, 2026. See the
+[GitHub Release v0.2.0](https://github.com/nick-roust/fake-bank/releases/tag/v0.2.0).
+No byte-reproducible build, crash recovery, Hosted Demo or multi-instance claim is added.
 
 ## [0.1.0] - 2026-07-07
 

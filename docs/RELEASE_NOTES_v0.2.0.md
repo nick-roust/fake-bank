@@ -1,11 +1,11 @@
-# FakeBank 0.2.0 — Release Candidate
+# FakeBank 0.2.0 — Released
 
-Status: RELEASE CANDIDATE / UNRELEASED. The API and Checkout images are public on
-GHCR and technical gates G1–G4 have passed. The official product `v0.2.0` Git tag
-and GitHub Release remain pending Founder authorization. Docker publication and
-the source-only prerelease do not constitute the official product release.
+Status: RELEASED — November 18, 2026. See the official
+[GitHub Release v0.2.0](https://github.com/nick-roust/fake-bank/releases/tag/v0.2.0).
+The API and Checkout images are public on GHCR and technical gates G1–G4 have passed.
+The source-only prerelease is separate from the official product release.
 
-## Candidate changes
+## Release changes
 
 - Single-instance image-only Compose for API, migrations, Checkout and PostgreSQL,
   linux/amd64, with a required-digest override and retained named volume.
@@ -51,10 +51,10 @@ payment and lifecycle/persistence checks. The timeout observation was five secon
 restart-safe delayed processing was not demonstrated. These are separate from the
 later committed-build, registry and external-host verification results.
 
-MARTA visual review passed and EVA editorial review was accepted. Final merge,
-Git tag `v0.2.0` and the official GitHub Release still require Founder authorization.
-No product release date is assigned. See [distribution instructions](DISTRIBUTION.md)
-and the [source-only prerelease](https://github.com/nick-roust/fake-bank/releases/tag/v0.2.0-sources.1).
+MARTA visual review passed and EVA editorial review was accepted. FakeBank v0.2.0
+was officially released on November 18, 2026. See the GitHub Release linked above,
+[distribution instructions](DISTRIBUTION.md) and the
+[source-only prerelease](https://github.com/nick-roust/fake-bank/releases/tag/v0.2.0-sources.1).
 
 ## Reliability and packaging limits
 

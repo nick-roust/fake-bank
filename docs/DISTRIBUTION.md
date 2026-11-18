@@ -4,10 +4,9 @@ The API and Checkout images are published on GHCR for `linux/amd64`. Technical
 gates G1–G4 passed on November 17, 2026: corresponding-source availability,
 registry identity/provenance, anonymous pulls and an external-host Quick Start.
 
-**Product status: Release Candidate / Unreleased.** Published Docker images do not
-mean that the official FakeBank `v0.2.0` Git tag or GitHub Release exists. Final
-product release authorization is pending. Hosted Demo and multi-instance support
-are excluded.
+**Product status: Released — November 18, 2026.** See the official
+[GitHub Release v0.2.0](https://github.com/nick-roust/fake-bank/releases/tag/v0.2.0).
+Hosted Demo and multi-instance support are excluded.
 
 ## Install published images
 
@@ -228,8 +227,8 @@ No byte-reproducibility claim follows from frozen dependencies or matching label
 Future artifact changes require a newly approved source/build/publication and
 verification scope. Keep exact revision, Dockerfile/lock hashes, base identities,
 build logs, image digests and content/license inspection results. Documentation-only
-updates do not change the verified runtime. Final product merge, Git tag and GitHub
-Release remain separate Founder decisions; none is implied by Docker publication.
+updates do not change the verified runtime. The official FakeBank v0.2.0 product
+release was published on November 18, 2026; see the GitHub Release linked above.
 
 ## Generic-only packaging acceptance boundary
 
@@ -265,8 +264,8 @@ identities and pass/fail without publishing sensitive findings. Recheck the full
 context including ignored/untracked files and symlinks at the actual build revision;
 new allowlist entries need explicit review. Source allowlists alone do not
 replace artifact-content inspection. The current image-content checks are complete;
-final runtime archive contents must still match the curated asset list when the
-official product release is assembled.
+any future curated runtime archive must still match the curated asset list when
+assembled.
 
 ## Licensing and corresponding sources
 
