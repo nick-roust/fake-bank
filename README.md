@@ -30,22 +30,36 @@ Payment form and completed test payment in the local Checkout interface (mobile 
 
 ## Quick Start — Docker
 
-From a source checkout, build and start the existing local runtime:
+**Published images:** The 0.2.0 API and Checkout images are public on GHCR and
+verified for Linux amd64, including anonymous pulls and an external-host payment
+flow. FakeBank 0.2.0 remains a Release Candidate; the official product Git tag and
+GitHub Release are pending.
+
+Follow [published-image installation](docs/DISTRIBUTION.md#install-published-images)
+to obtain the Compose files and create `.env.release` with the verified digests.
+Then run from the directory containing `docker/`:
+
+```sh
+docker compose --env-file .env.release -f docker/docker-compose.release.yml -f docker/docker-compose.release.lock.yml pull
+docker compose --env-file .env.release -f docker/docker-compose.release.yml -f docker/docker-compose.release.lock.yml up -d --no-build
+```
+
+Requires Docker Engine with Compose v2, registry network access, a browser and free
+loopback ports 8080/5173. No host Node.js, pnpm or application source checkout is
+required. PostgreSQL, migrations, API and Checkout start together; PostgreSQL has
+no host port. The first-payment walkthrough requires an external webhook receiver.
+
+**Source-build development:** From a source checkout, build development `:local`
+images with the separate development Compose file:
 
 ```sh
 docker compose -f docker/docker-compose.yml up --build -d --wait
 ```
 
-Requires Docker with Compose v2, build-time network access, and a browser. No host
-Node.js or pnpm installation is needed. Use free local ports 8080, 5173 and 55432.
-The command builds development `:local` images; it does not pull a published 0.2.0
-application image. PostgreSQL, migrations, API and Checkout start together.
-Example Merchant is a separate native-development example, not a Compose service.
-
-Published-image distribution is not yet available as a verified release. The
-[distribution instructions](docs/DISTRIBUTION.md) describe the image-only candidate,
-digest lock and remaining registry verification. Do not substitute unverified image
-references or infer publication from version strings.
+This alternative requires build-time network access and free ports 8080, 5173 and
+55432. It builds locally instead of installing the published images; no host
+Node.js/pnpm is needed for the Docker build. Run one of these configurations at a
+time. Example Merchant remains a separate native example, not a Compose service.
 
 ## First Test Payment
 
@@ -73,7 +87,7 @@ Use test inputs only. FakeBank does not move real funds or connect to banking ra
 - [Persistence](docs/PERSISTENCE.md) — PostgreSQL schema and migrations.
 - [Architecture](docs/ARCHITECTURE.md) — Product boundaries and component ownership.
 - [Distribution](docs/DISTRIBUTION.md) — Image-only configuration and lifecycle.
-- [0.2.0 release notes](docs/RELEASE_NOTES_v0.2.0.md) — Candidate scope and open gates.
+- [0.2.0 release notes](docs/RELEASE_NOTES_v0.2.0.md) — Candidate scope and completed technical verification.
 - [Changelog](CHANGELOG.md) — Version history.
 
 ## Validation
@@ -94,7 +108,7 @@ provide browser or PostgreSQL integration coverage.
 Callbacks are unsigned and have no durable retry worker. Payment creation has no
 Idempotency-Key replay contract. Delayed timers are process-local and are not
 restored after restart; Checkout does not automatically poll delayed results.
-This release targets one local instance. Hosted Demo, multi-instance support,
+This distribution targets one local instance. Hosted Demo, multi-instance support,
 production payment security, real acquiring and settlement are outside its scope.
 
 ## Author & License

@@ -11,9 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- Single-instance, linux/amd64 image-only Compose candidate for approved GHCR packages.
+- Single-instance, linux/amd64 image-only Compose for the published API and Checkout
+  GHCR images.
 - Exact build-context and curated runtime asset allowlists; generic-only packaging acceptance boundary.
-- Required-digest override and publication/provenance checklist; manifest values remain unknown.
+- Required-digest override with verified API, Checkout and PostgreSQL manifest
+  values in the digest template and documentation.
 - Container walkthrough with separate browser-return and container-reachable webhook URLs.
 - OCI source, version, revision and license label inputs in existing Dockerfiles.
 
@@ -22,8 +24,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Product package versions and OpenAPI info.version to 0.2.0; no API semantic changes.
 - Documented existing simulator reliability boundaries and retained-volume lifecycle.
 
-This is release preparation, not evidence of published images, a completed release,
-clean-machine verification, byte-reproducible builds, Hosted Demo or multi-instance support.
+### Verified
+
+- G1–G4 accepted: corresponding sources, registry identities/provenance, anonymous
+  Docker pulls and an external-host Quick Start without application source or host Node.js/pnpm.
+- Two synthetic successful payments with matching webhook HTTP 200; stop/start
+  preserves payment data and migration records. G4 did not repeat all six scenarios.
+
+The Docker images are published and verified. FakeBank 0.2.0 remains a Release
+Candidate / Unreleased until the official product release is authorized. No
+byte-reproducible build, crash recovery, Hosted Demo or multi-instance claim is added.
 
 ## [0.1.0] - 2026-07-07
 

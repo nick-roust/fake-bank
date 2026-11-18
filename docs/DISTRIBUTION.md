@@ -1,57 +1,85 @@
-# Single-instance Docker distribution — 0.2.0 preparation
+# Single-instance Docker distribution — FakeBank 0.2.0
 
-Status: candidate configuration only. Approved target packages are
-`ghcr.io/nick-roust/fake-bank-api` and `ghcr.io/nick-roust/fake-bank-checkout-ui`,
-platform `linux/amd64`. Exact application manifest digests are UNKNOWN until a
-separately approved build/publication and registry verification. No published-image
-availability, anonymous pull, clean-host success or byte-reproducibility is claimed.
-Hosted Demo and multi-instance support are excluded.
+The API and Checkout images are published on GHCR for `linux/amd64`. Technical
+gates G1–G4 passed on November 17, 2026: corresponding-source availability,
+registry identity/provenance, anonymous pulls and an external-host Quick Start.
 
-## Requirements and files
+**Product status: Release Candidate / Unreleased.** Published Docker images do not
+mean that the official FakeBank `v0.2.0` Git tag or GitHub Release exists. Final
+product release authorization is pending. Hosted Demo and multi-instance support
+are excluded.
+
+## Install published images
 
 Runtime requires Docker Engine with Compose v2 on Linux amd64, a browser, and an
-existing external HTTP webhook receiver. The payment example also uses curl. No host
-Node.js/pnpm or source build is required for the published-image runtime. Obtain
-`docker-compose.release.yml`, `docker-compose.release.lock.yml` and
-`release.env.example` from the same approved source revision, keeping them together
-in a `docker` directory. Run the commands below from its parent directory.
+external HTTP webhook receiver. The payment example also uses curl. No host
+Node.js/pnpm, application source checkout or source build is required.
 
-The base file is a **candidate tag template**, with no build contexts. It preserves
-PostgreSQL → one-shot migrations → API → Checkout ordering. Checkout proxies `/v1`
-to API on the default Compose network. API and Checkout publish only loopback
-8080/5173; PostgreSQL has no host port. `postgres-data` retains database state.
-This is one local instance; use free ports and do not operate on existing FakeBank
-or PG27 projects. The dedicated default project is `fake-bank-release`, distinct
-from development, but port conflicts still prevent simultaneous default runtimes.
+Download the two unchanged Compose definitions from the configuration revision
+used in external-host verification. Run from a new directory with free loopback
+ports 8080/5173; do not use an existing FakeBank or PG27 project directory:
 
-## Digest lock before final distribution
+```sh
+mkdir -p docker
+curl --fail --location https://raw.githubusercontent.com/nick-roust/fake-bank/47acc43c366d87df956179f7e143285901f0ea41/docker/docker-compose.release.yml --output docker/docker-compose.release.yml
+curl --fail --location https://raw.githubusercontent.com/nick-roust/fake-bank/47acc43c366d87df956179f7e143285901f0ea41/docker/docker-compose.release.lock.yml --output docker/docker-compose.release.lock.yml
+```
 
-After separate publication approval, inspect the actual registry manifests for both
-approved packages and PostgreSQL, confirming linux/amd64. Record registry manifest
-digests, source revision, labels, build logs and registry verification results.
-Do not use Docker local image/config IDs as manifest digests. A version tag is not
-an immutable identity. Labels alone are assertions, not cryptographic provenance.
+Preparation-era comments in these unchanged Compose definitions are historical;
+the publication status and verified digests in this guide describe the completed
+G1–G4 checks.
 
-Copy `docker/release.env.example` to a private, ignored `.env.release`. Set all three
-values to verified `sha256:` registry manifest digests; do not commit credentials.
-Do not fill them with guesses or the old local verification image IDs. The lock
-file requires them and uses the identical API reference for migrations and API.
-The PostgreSQL digest must identify the existing 17-alpine dependency, not a new
-major version. Final distribution acceptance and GitHub Release are blocked until these values,
-their source correspondence and anonymous pulls are independently verified. Remote
-digests are obtained during the separately Founder-authorized registry publication
-stage; that prior authorization is required before any push, not conditional on
-already having the new remote digests. Preserve the final files and populated digest lock as
-release evidence after approval; no populated lock exists in this preparation.
+The base file supplies version tags and no build contexts. Always combine it with
+the digest-lock override below. It preserves PostgreSQL → one-shot migrations →
+API → Checkout ordering. Checkout proxies `/v1` to API on the Compose network.
+API and Checkout publish only loopback 8080/5173; PostgreSQL has no host port.
+`postgres-data` retains database state. The dedicated default project is
+`fake-bank-release`, distinct from development, but fixed ports still prevent
+simultaneous default runtimes. This is a single-instance configuration.
 
-Validate without contacting the runtime:
+## Verified images and digest lock
+
+These registry manifest digests were verified independently of local image IDs.
+The PostgreSQL digest is the `linux/amd64` manifest for the existing `17-alpine`
+dependency, not a different major version.
+
+| Component | Version reference | Verified registry manifest digest |
+|---|---|---|
+| API and migrations | `ghcr.io/nick-roust/fake-bank-api:0.2.0` | `sha256:8de4699c905e716cf1f71bf92709522002c2751af4418953f7ff21639c30aebc` |
+| Checkout | `ghcr.io/nick-roust/fake-bank-checkout-ui:0.2.0` | `sha256:3739589851cab7078849023be742d1e4ff092d8b24db26648ffb667cd1488568` |
+| PostgreSQL | `postgres:17-alpine` | `sha256:005c5c37db96c1e6652a79ea31f9886402fba81ac95dc2db897739121dd7f8f2` |
+
+The application images were built from runtime source
+`cfe74cf4aebdc3deef72762216453d79964ed4ee`. The Compose definitions used in G4 are
+from `47acc43c366d87df956179f7e143285901f0ea41`. Documentation updates do not change
+the image source revision. OCI source/version/revision/license labels and exact
+manifest/config correspondence were verified; labels alone are not provenance.
+
+Create `.env.release` in the parent of `docker/` with the verified values:
+
+```sh
+cat > .env.release <<'EOF'
+FAKE_BANK_API_DIGEST=sha256:8de4699c905e716cf1f71bf92709522002c2751af4418953f7ff21639c30aebc
+FAKE_BANK_CHECKOUT_DIGEST=sha256:3739589851cab7078849023be742d1e4ff092d8b24db26648ffb667cd1488568
+POSTGRES_DIGEST=sha256:005c5c37db96c1e6652a79ea31f9886402fba81ac95dc2db897739121dd7f8f2
+EOF
+```
+
+Alternatively, copy the current [digest template](../docker/release.env.example)
+to `.env.release`; it contains the same public digest values. Keep local environment
+files outside version control. Do not put credentials in shared release material.
+The unchanged lock override requires all three variables, pins references as
+`tag@digest`, and uses the same API image for migrations and API. A version tag
+alone is mutable; do not substitute unverified local image/config IDs or omit the
+lock override. No registry login is required for these public images.
+
+Validate configuration without contacting the runtime:
 
 ```sh
 docker compose --env-file .env.release -f docker/docker-compose.release.yml -f docker/docker-compose.release.lock.yml config --quiet
 ```
 
-Only **after separate approval** and registry verification, the following are the
-end-user lifecycle commands (not executed during release preparation):
+Pull and start the published images:
 
 ```sh
 docker compose --env-file .env.release -f docker/docker-compose.release.yml -f docker/docker-compose.release.lock.yml pull
@@ -147,60 +175,61 @@ establish restart/crash recovery. Checkout does not automatically poll delayed o
 reload or GET to observe them. No hosted uptime, production security, multi-instance,
 backup, crash recovery or universal idempotency guarantee is made.
 
-The November 17, 2026 local candidate verification used an exact working-tree
-snapshot on base Git revision `57cb46f90610cbb47abab04f1258e1f930fca05c`, after the
-earlier baseline verification. The minimized API and approved branded Checkout
-passed six scenario outcomes, one browser success, fresh/repeated migrations,
-stop/start and retained payment records after container recreation. A new control
-payment succeeded after recreation. The timeout observation was five seconds.
-This is local candidate evidence, not registry/anonymous-pull or external-host proof.
-License/documentation packaging changes require a new artifact-content check;
-source labels alone do not establish correspondence.
+G1–G4 verification completed on November 17, 2026:
 
-For a source-build alternative before image publication, run
+- **G1 — Corresponding sources:** the matching base-component source companion is
+  public and its downloaded SHA-256 matches the approved archive. See
+  [Licensing and corresponding sources](#licensing-and-corresponding-sources).
+- **G2 — Registry identities and provenance:** both published application manifests
+  and configs match the inspected FB-020 candidates from committed runtime source
+  `cfe74cf4aebdc3deef72762216453d79964ed4ee` byte for byte.
+- **G3 — Anonymous access:** both application images were pulled by exact digest
+  with an empty Docker configuration; all config/layer blobs were also downloaded
+  anonymously and hash-verified.
+- **G4 — External-host Quick Start:** Linux amd64, Docker Engine and Compose v2,
+  without host Node.js/pnpm or an application source checkout. Digest-locked pulls,
+  clean/repeated migrations, healthy services, one native browser payment, terminal
+  GET, webhook HTTP 200, stop/start with unchanged SQL state, and a second successful
+  payment through the Checkout proxy passed. Existing unrelated host workloads
+  were preserved. The test configuration added only resource limits.
+
+G4 used two synthetic `card_success` payments; it did not repeat all six scenarios.
+Stop/start passed with zero exit codes and no OOM kills. This does not establish
+crash recovery, restart-safe delayed processing or universal delivery guarantees.
+
+Historical local candidate evidence is separate: the November 17 working-tree
+snapshot on base revision `57cb46f90610cbb47abab04f1258e1f930fca05c` passed six scenario
+outcomes, a browser payment, fresh/repeated migrations, stop/start and record
+retention after container recreation. Its timeout observation was five seconds.
+That local evidence alone did not establish registry or external-host readiness;
+G1–G4 subsequently verified the published artifacts within the bounds above.
+
+For source-build development, run
 `docker compose -f docker/docker-compose.yml up --build -d --wait` from a checkout.
-This builds development tags and requires no host Node.js/pnpm. It is separate from
-the image-only commands above; do not run both on the same default ports.
+This builds development `:local` tags rather than installing the published images
+and needs no host Node.js/pnpm. Do not run both on the same default ports.
 
-## Separately approved build/publication procedure
+## Historical build and publication record — maintainers
 
-No publishing workflow or credentials infrastructure is added. After SLY technical
-acceptance, request Founder authority for each build/publication/verification stage.
-Choose the exact approved committed source revision; require a clean checkout and
-record it as SOURCE_REVISION. Build candidates with unique tags, never the existing
-`:local` tags; do not touch existing containers or volumes. Illustrative commands
-for an authorized operator, not commands executed in this preparation:
+Build and publication were producer operations, not end-user installation steps.
+The existing API and Checkout Dockerfiles were built from the clean committed
+runtime revision above with `VERSION=0.2.0` and its full `REVISION`. Unique candidate
+tags were used; existing development `:local` tags were preserved. Build context,
+dependency lock, base identities, image layers/filesystems, generated Checkout
+assets and license notices were inspected before controlled publication.
 
-```sh
-SOURCE_REVISION=APPROVED_FULL_COMMIT_SHA
-API_CANDIDATE="ghcr.io/nick-roust/fake-bank-api:0.2.0-candidate-$SOURCE_REVISION"
-CHECKOUT_CANDIDATE="ghcr.io/nick-roust/fake-bank-checkout-ui:0.2.0-candidate-$SOURCE_REVISION"
-docker build --platform linux/amd64 --build-arg VERSION=0.2.0 --build-arg REVISION="$SOURCE_REVISION" -f docker/Dockerfile.api -t "$API_CANDIDATE" .
-docker build --platform linux/amd64 --build-arg VERSION=0.2.0 --build-arg REVISION="$SOURCE_REVISION" -f docker/Dockerfile.checkout-ui -t "$CHECKOUT_CANDIDATE" .
-```
+The two approved FB-020 candidates were then tagged `:0.2.0` and pushed without a
+rebuild. Registry manifests/configs were compared with the candidates, both packages
+were made public, and anonymous access and the external-host runtime were verified.
+The current verified identities are the installation table above. These completed
+operations do not authorize overwriting published tags or rebuilding the candidate.
+No byte-reproducibility claim follows from frozen dependencies or matching labels.
 
-Retain source SHA, dependency lock hash, Dockerfile hashes, base-image identities,
-platform, tool versions and complete build outputs. Inspect candidate labels/config;
-test exact candidate images in a separately authorized isolated project first. No
-byte-reproducibility is implied by frozen dependencies or OCI labels.
-
-Only after explicit registry publication authority and approved authentication:
-
-```sh
-docker tag "$API_CANDIDATE" ghcr.io/nick-roust/fake-bank-api:0.2.0
-docker tag "$CHECKOUT_CANDIDATE" ghcr.io/nick-roust/fake-bank-checkout-ui:0.2.0
-docker push ghcr.io/nick-roust/fake-bank-api:0.2.0
-docker push ghcr.io/nick-roust/fake-bank-checkout-ui:0.2.0
-```
-
-Record push results and remote manifest digests; inspect manifests/platforms and
-revision/version/license/source labels against the approved source. Obtain separate
-authority for any package visibility changes; do not infer public pullability from
-push success. Verify anonymous access and pull on a clean external amd64 host,
-fill the digest lock with observed values, render it and run the full walkthrough
-against those exact references. Preserve registry/HTTP/browser/lifecycle evidence.
-Git tag/GitHub Release/public documentation publication each remain separately
-approved actions; do not advertise completed distribution before evidence closes.
+Future artifact changes require a newly approved source/build/publication and
+verification scope. Keep exact revision, Dockerfile/lock hashes, base identities,
+build logs, image digests and content/license inspection results. Documentation-only
+updates do not change the verified runtime. Final product merge, Git tag and GitHub
+Release remain separate Founder decisions; none is implied by Docker publication.
 
 ## Generic-only packaging acceptance boundary
 
@@ -221,9 +250,9 @@ content guarantee: dependencies and build-generated contents also require inspec
 `docker/release-assets.txt` is the explicit curated runtime asset list. Archive only
 those literal relative paths, from the approved clean source revision; do not package
 the workspace, ignored/untracked files, verification evidence or populated digest/env
-files by recursive directory archive. The empty digest template is permitted and has
-no credentials. After manifest verification, record approved non-secret digest values
-in the final reviewed release material; do not bundle private environment files.
+files by recursive directory archive. The digest template contains only verified
+public image identities, not credentials. Preserve those non-secret values in reviewed release
+material; do not bundle private environment files.
 GitHub's automatic source archives are separate Git snapshots, not curated runtime
 bundles; review their exact committed tree before authorizing a source release.
 
@@ -234,15 +263,29 @@ PG27 coupling. Deleted-in-later-layer material is still prohibited. Inspect cand
 release archive members and contents against the asset list. Record image manifest
 identities and pass/fail without publishing sensitive findings. Recheck the full local
 context including ignored/untracked files and symlinks at the actual build revision;
-new allowlist entries need explicit review. This source-level preparation does not
-claim image/layer, dependency, browser-bundle or final-archive content verification.
+new allowlist entries need explicit review. Source allowlists alone do not
+replace artifact-content inspection. The current image-content checks are complete;
+final runtime archive contents must still match the curated asset list when the
+official product release is assembled.
 
-## Licensing gate
+## Licensing and corresponding sources
 
 [Third-Party Notices](../THIRD_PARTY_NOTICES.md) accompanies the root LICENSE in
 both application images at `/usr/share/licenses/fake-bank/`. Preserve all inherited
-base/dependency notices. The curated archive includes both files and the OpenAPI
-contract. Review exact base package licenses and fulfil applicable source-delivery
-obligations before public redistribution; links and SPDX metadata alone do not
-close this gate. No source offer or licensing acceptance is implied by a passing
-runtime test. A changed base identity requires a refreshed inventory.
+base/dependency notices. The curated runtime asset list includes these notices
+and the OpenAPI contract; it is separate from the corresponding-source companion.
+
+G1 verified public access to the matching archive through the
+[source-only prerelease](https://github.com/nick-roust/fake-bank/releases/tag/v0.2.0-sources.1):
+
+- [fake-bank-0.2.0-base-sources.tar.gz](https://github.com/nick-roust/fake-bank/releases/download/v0.2.0-sources.1/fake-bank-0.2.0-base-sources.tar.gz)
+- Size: 128,616,003 bytes.
+- SHA-256: `13b23bca9eb94bfb9f35e19065ea96c90a4de0cbfc0fc77d0981275e6a07baa8`.
+
+The source-only prerelease does not constitute the FakeBank 0.2.0 product release.
+See [source availability](../licenses/SOURCE_AVAILABILITY.txt) for the exact scope
+and [base notices](../licenses/BASE_LICENSES.txt) for applicable third-party terms.
+A passing runtime test alone does not establish license compliance. Changes to
+base identities or distributed components require refreshed inventories, notices
+and applicable source-delivery verification before redistribution. PostgreSQL is
+pulled separately, not embedded in the application images.
